@@ -1,0 +1,413 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "version": "nextjs",
+    "title": "Shiina-Api's",
+    "description": "Hello World",
+    "contact": {
+      "name": "Source Code",
+      "url": "https://github.com/balxz/swagger-nextjs"
+    }
+  },
+  "paths": {
+    "/api/ai/nano-banana": {
+      "post": {
+        "summary": "Nano Banana AI Image Editor",
+        "description": "Edit gambar menggunakan AI Nano Banana dengan prompt teks",
+        "tags": [
+          "AI Image Editor"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File gambar yang akan di-edit (format: jpg, png, jpeg)"
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "description": "Prompt untuk edit gambar (contoh: ubah menjadi anime style)",
+                    "example": "ubah gambar ini menjadi anime style"
+                  }
+                },
+                "required": ["image", "prompt"]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "imageUrl": {
+                    "type": "string",
+                    "description": "URL gambar eksternal (alternatif dari upload file)",
+                    "example": "https://example.com/image.jpg"
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "description": "Prompt untuk edit gambar",
+                    "example": "ubah gambar ini menjadi anime style"
+                  }
+                },
+                "required": ["prompt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "session_id": {
+                          "type": "string",
+                          "example": "session_123456"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "succeeded"
+                        },
+                        "result_url": {
+                          "type": "string",
+                          "example": "https://nc-cdn.oss-us-west-1.aliyuncs.com/notegpt/web3in1/result.jpg"
+                        },
+                        "prompt": {
+                          "type": "string",
+                          "example": "ubah gambar ini menjadi anime style"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - parameter tidak lengkap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Prompt dan gambar diperlukan"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Proses gagal di server"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/openai/gpt4-pro": {
+      "get": {
+        "summary": "",
+        "description": "Gpt 4o Pro",
+        "tags": [
+          "Openai"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "`Try Say Hello Gpt!`",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "Hello Gpt!"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "parameter format not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/downloader/tiktokdl": {
+      "get": {
+        "summary": "",
+        "description": "tiktok downloader",
+        "tags": [
+          "Downloader Sosmed"
+        ],
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "description": "`Try Paste Tiktok Url`",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "https://vt.tiktok.com/ZSjunPJbq"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "parameter format not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stalker/ttstalk": {
+      "get": {
+        "summary": "",
+        "description": "tiktok stalker with username",
+        "tags": [
+          "Stalker Sosial Media"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "description": "`Try Input Username Tiktok`",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "iqstore78"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "parameter format not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stalker/npmstalk": {
+      "post": {
+        "summary": "",
+        "description": "Try Input Package Name",
+        "tags": [
+          "Stalker Sosial Media"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "description": "Try Input Package Name",
+                    "example": "axios"
+                  }
+                },
+                "required": ["text"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "parameter format not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stalker/igstalk": {
+      "post": {
+        "summary": "",
+        "description": "instagram stalker with username",
+        "tags": [
+          "Stalker Sosial Media"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "description": "Try Input Username Instagram",
+                    "example": "iqstore78"
+                  }
+                },
+                "required": ["username"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "parameter format not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/say": {
+      "get": {
+        "summary": "",
+        "description": "test server",
+        "tags": [
+          "Testings Developer"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "`Try Say Hello World`",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "Hello World!"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "parameter format not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
