@@ -10,150 +10,40 @@ export const config = {
   },
 };
 
-// CDN Providers
-const CDN_PROVIDERS = {
-  // File.io - Simple & reliable
-  fileio: async (filePath, originalFilename) => {
-    const FormData = require('form-data');
-    const formData = new FormData();
-    const fileStream = fs.createReadStream(filePath);
-    
-    formData.append('file', fileStream, originalFilename || `file_${uuidv4()}`);
-
-    const response = await axios.post('https://file.io', formData, {
-      headers: formData.getHeaders(),
-      timeout: 30000
-    });
-
-    if (response.data && response.data.success) {
-      return {
-        url: response.data.link,
-        provider: 'file.io',
-        expires: response.data.expires || '14 days'
-      };
-    }
-    throw new Error('File.io upload failed');
-  },
-
-  // tmpfiles.org - Alternative
-  tmpfiles: async (filePath, originalFilename) => {
-    const FormData = require('form-data');
-    const formData = new FormData();
-    const fileStream = fs.createReadStream(filePath);
-    
-    formData.append('files[]', fileStream);
-
-    const response = await axios.post('https://tmpfiles.org/api/v1/upload', formData, {
-      headers: formData.getHeaders(),
-      timeout: 30000
-    });
-
-    if (response.data?.data?.url) {
-      return {
-        url: response.data.data.url.replace('/dl/', '/'),
-        provider: 'tmpfiles.org',
-        expires: '1 hour'
-      };
-    }
-    throw new Error('tmpfiles.org upload failed');
-  },
-
-  // FreeImage.host - Untuk gambar
-  freeimage: async (filePath, originalFilename) => {
-    const FormData = require('form-data');
-    const formData = new FormData();
-    const fileStream = fs.createReadStream(filePath);
-    
-    formData.append('source', fileStream);
-
-    const response = await axios.post('https://freeimage.host/api/1/upload', formData, {
-      headers: {
-        ...formData.getHeaders(),
-      },
-      params: {
-        key: '6d207e02198a847aa98d0a2a901485a5' // Free API key
-      },
-      timeout: 30000
-    });
-
-    if (response.data && response.data.image && response.data.image.url) {
-      return {
-        url: response.data.image.url,
-        provider: 'freeimage.host',
-        expires: 'permanent'
-      };
-    }
-    throw new Error('FreeImage.host upload failed');
-  },
-
-  // Litterbox - Temporary storage
-  litterbox: async (filePath, originalFilename) => {
-    const FormData = require('form-data');
-    const formData = new FormData();
-    const fileStream = fs.createReadStream(filePath);
-    
-    formData.append('reqtype', 'fileupload');
-    formData.append('time', '24h');
-    formData.append('fileToUpload', fileStream, originalFilename || `file_${uuidv4()}`);
-
-    const response = await axios.post('https://litterbox.catbox.moe/resources/internals/api.php', formData, {
-      headers: formData.getHeaders(),
-      timeout: 30000
-    });
-
-    if (response.data && response.data.startsWith('http')) {
-      return {
-        url: response.data,
-        provider: 'litterbox',
-        expires: '24 hours'
-      };
-    }
-    throw new Error('Litterbox upload failed');
-  }
-};
-
-// Upload ke CDN dengan fallback
-async function uploadToCDN(filePath, originalFilename, preferredProvider = null) {
-  const providers = preferredProvider ? 
-    [preferredProvider, ...Object.keys(CDN_PROVIDERS).filter(p => p !== preferredProvider)] : 
-    Object.keys(CDN_PROVIDERS);
-
-  for (const provider of providers) {
-    try {
-      console.log(`Trying ${provider}...`);
-      const result = await CDN_PROVIDERS[provider](filePath, originalFilename);
-      console.log(`Success with ${provider}:`, result.url);
-      return result;
-    } catch (error) {
-      console.log(`${provider} failed:`, error.message);
-      continue;
-    }
-  }
+// Hanya pakai tmpfiles.org
+async function uploadToTmpfiles(filePath, originalFilename) {
+  const FormData = require('form-data');
+  const formData = new FormData();
+  const fileStream = fs.createReadStream(filePath);
   
-  throw new Error('All CDN providers failed');
-}
+  // Gunakan field name 'files[]' untuk tmpfiles.org
+  formData.append('files[]', fileStream);
 
-// Parse form data
-async function parseFormData(req) {
-  return new Promise((resolve, reject) => {
-    const form = formidable({
-      uploadDir: '/tmp',
-      keepExtensions: true,
-      maxFileSize: 50 * 1024 * 1024, // 50MB max
-      filter: function ({ name, originalFilename, mimetype }) {
-        // Terima semua jenis file
-        return true;
-      }
-    });
-
-    form.parse(req, (err, fields, files) => {
-      if (err) reject(err);
-      resolve({ fields, files });
-    });
+  const response = await axios.post('https://tmpfiles.org/api/v1/upload', formData, {
+    headers: {
+      ...formData.getHeaders(),
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    timeout: 30000
   });
+
+  console.log('Tmpfiles response:', response.data);
+
+  if (response.data?.success && response.data?.data?.url) {
+    // Convert dari download URL ke direct URL
+    const downloadUrl = response.data.data.url;
+    const directUrl = downloadUrl.replace('/dl/', '/');
+    
+    return {
+      url: directUrl,
+      download_url: downloadUrl,
+      provider: 'tmpfiles.org',
+      expires: '1 hour'
+    };
+  }
+  throw new Error('Tmpfiles.org upload failed: ' + JSON.stringify(response.data));
 }
 
-// Handler utama
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -164,39 +54,45 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // GET - Info tentang CDN providers
+  // GET - Info tentang tmpfiles
   if (req.method === 'GET') {
-    const providers = Object.keys(CDN_PROVIDERS).map(provider => ({
-      name: provider,
-      description: getProviderDescription(provider),
-      maxFileSize: '50MB',
-      features: getProviderFeatures(provider)
-    }));
-
     return res.status(200).json({
       status: true,
-      message: 'CDN Upload API',
-      providers: providers,
+      message: 'Tmpfiles.org CDN API',
+      provider: 'tmpfiles.org',
+      features: [
+        '1 hour expiration',
+        'Any file type', 
+        'Max 50MB file size',
+        'Direct download links'
+      ],
       usage: {
         post: 'Upload file menggunakan multipart/form-data',
-        parameters: {
-          file: 'File yang akan diupload',
-          provider: `Preferred CDN provider (optional): ${Object.keys(CDN_PROVIDERS).join(', ')}`
-        }
+        field_name: 'file'
       }
     });
   }
 
-  // POST - Upload file
+  // POST - Upload file ke tmpfiles.org
   if (req.method === 'POST') {
     let filePath = null;
 
     try {
-      const { fields, files } = await parseFormData(req);
-      
-      const file = files.file?.[0] || files.file;
-      const preferredProvider = fields.provider?.[0] || fields.provider;
+      const form = formidable({
+        uploadDir: '/tmp',
+        keepExtensions: true,
+        maxFileSize: 50 * 1024 * 1024, // 50MB max
+      });
 
+      const [fields, files] = await new Promise((resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) reject(err);
+          resolve([fields, files]);
+        });
+      });
+
+      const file = files.file?.[0] || files.file;
+      
       if (!file) {
         return res.status(400).json({
           status: false,
@@ -207,7 +103,7 @@ export default async function handler(req, res) {
       filePath = file.filepath;
       const originalFilename = file.originalFilename || `file_${uuidv4()}${path.extname(file.filepath)}`;
 
-      console.log('Uploading file:', originalFilename);
+      console.log('Uploading to tmpfiles.org:', originalFilename);
 
       // Validasi file size
       const stats = fs.statSync(filePath);
@@ -218,8 +114,8 @@ export default async function handler(req, res) {
         });
       }
 
-      // Upload ke CDN
-      const uploadResult = await uploadToCDN(filePath, originalFilename, preferredProvider);
+      // Upload ke tmpfiles.org
+      const uploadResult = await uploadToTmpfiles(filePath, originalFilename);
 
       // Clean up
       if (fs.existsSync(filePath)) {
@@ -228,12 +124,13 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         status: true,
-        message: 'File uploaded successfully',
+        message: 'File uploaded successfully to tmpfiles.org',
         data: {
           filename: originalFilename,
           size: stats.size,
           mimetype: file.mimetype,
-          url: uploadResult.url,
+          url: uploadResult.url, // Direct URL
+          download_url: uploadResult.download_url, // Download URL
           provider: uploadResult.provider,
           expires: uploadResult.expires,
           timestamp: new Date().toISOString()
@@ -246,10 +143,10 @@ export default async function handler(req, res) {
         fs.unlinkSync(filePath);
       }
 
-      console.error('Upload error:', error);
+      console.error('Upload error:', error.message);
       return res.status(500).json({
         status: false,
-        message: error.message || 'Upload failed'
+        message: error.message || 'Upload to tmpfiles.org failed'
       });
     }
   }
@@ -258,25 +155,4 @@ export default async function handler(req, res) {
     status: false,
     message: 'Method not allowed'
   });
-}
-
-// Helper functions
-function getProviderDescription(provider) {
-  const descriptions = {
-    fileio: 'Simple file sharing with 14 days expiration',
-    tmpfiles: 'Temporary file hosting with 1 hour expiration',
-    freeimage: 'Permanent image hosting (images only)',
-    litterbox: 'Temporary file storage with 24 hours expiration'
-  };
-  return descriptions[provider] || 'File hosting service';
-}
-
-function getProviderFeatures(provider) {
-  const features = {
-    fileio: ['14 days expiration', 'Any file type', 'Simple API'],
-    tmpfiles: ['1 hour expiration', 'Fast upload', 'Temporary storage'],
-    freeimage: ['Permanent storage', 'Images only', 'No registration'],
-    litterbox: ['24 hours expiration', 'Any file type', 'Catbox network']
-  };
-  return features[provider] || [];
 }
