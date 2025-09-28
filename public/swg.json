@@ -271,6 +271,105 @@
       }
     },
     
+  "/api/iloveimg/upscale": {
+    "get": {
+      "summary": "Upscale Image from URL",
+      "description": "Upscale an image by providing its URL. Increases resolution by 2x or 4x.",
+      "tags": ["Image Processing"],
+      "parameters": [
+        {
+          "name": "image",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "url"
+          },
+          "description": "Image URL to upscale",
+          "example": "https://example.com/image.jpg"
+        },
+        {
+          "name": "scale",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "enum": [2, 4],
+            "default": 2
+          },
+          "description": "Upscale factor",
+          "example": 2
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success - Returns upscaled image",
+          "content": {
+            "image/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request"
+        },
+        "500": {
+          "description": "Internal Server Error"
+        }
+      }
+    },
+    "post": {
+      "summary": "Upscale Image from File Upload",
+      "description": "Upscale an image by uploading a file. Increases resolution by 2x or 4x.",
+      "tags": ["Image Processing"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "image": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "Image file to upscale"
+                },
+                "scale": {
+                  "type": "integer",
+                  "enum": [2, 4],
+                  "default": 2,
+                  "description": "Upscale factor"
+                }
+              },
+              "required": ["image"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success - Returns upscaled image",
+          "content": {
+            "image/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request"
+        },
+        "500": {
+          "description": "Internal Server Error"
+        }
+      }
+    }
+  },
     
   "/api/cdn": {
     "get": {
