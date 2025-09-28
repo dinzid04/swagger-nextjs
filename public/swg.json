@@ -11,9 +11,112 @@
   },
   "paths": {
     "/api/ai/nano-banana": {
-      "post": {
+      "get": {
         "summary": "Nano Banana AI Image Editor",
-        "description": "Edit gambar menggunakan AI Nano Banana dengan prompt teks",
+        "description": "Edit gambar menggunakan AI Nano Banana dengan URL gambar eksternal",
+        "tags": [
+          "AI Image Editor"
+        ],
+        "parameters": [
+          {
+            "name": "prompt",
+            "in": "query",
+            "description": "Prompt untuk edit gambar (contoh: Change the color of black)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Change the color of black"
+            }
+          },
+          {
+            "name": "imageUrl",
+            "in": "query",
+            "description": "URL gambar eksternal yang akan di-edit",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "https://raw.githubusercontent.com/DinzID/nyoba/main/images/image_1757710705910_92221b.jpg"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "result": {
+                      "type": "string",
+                      "example": "https://tmpfiles.org/dl/2336137/1759017881196.jpg"
+                    }
+                  }
+                },
+                "example": {
+                  "status": true,
+                  "result": "https://tmpfiles.org/dl/2336137/1759017881196.jpg"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Parameter tidak lengkap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Parameter prompt dan imageUrl diperlukan"
+                    }
+                  }
+                },
+                "example": {
+                  "status": false,
+                  "message": "Parameter prompt dan imageUrl diperlukan"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Gagal memproses gambar"
+                    }
+                  }
+                },
+                "example": {
+                  "status": false,
+                  "message": "Gagal memproses gambar"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Nano Banana AI Image Editor dengan Upload File",
+        "description": "Edit gambar menggunakan AI Nano Banana dengan upload file langsung",
         "tags": [
           "AI Image Editor"
         ],
@@ -24,114 +127,99 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "image": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "File gambar yang akan di-edit (format: jpg, png, jpeg)"
-                  },
-                  "prompt": {
-                    "type": "string",
-                    "description": "Prompt untuk edit gambar (contoh: ubah menjadi anime style)",
-                    "example": "ubah gambar ini menjadi anime style"
-                  }
-                },
-                "required": ["image", "prompt"]
-              }
-            },
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "imageUrl": {
-                    "type": "string",
-                    "description": "URL gambar eksternal (alternatif dari upload file)",
-                    "example": "https://example.com/image.jpg"
-                  },
                   "prompt": {
                     "type": "string",
                     "description": "Prompt untuk edit gambar",
-                    "example": "ubah gambar ini menjadi anime style"
+                    "example": "Change the color of black"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File gambar (jpg, png, jpeg)"
                   }
                 },
-                "required": ["prompt"]
+                "required": [
+                  "prompt",
+                  "image"
+                ]
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "success",
+            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "status": {
-                      "type": "string",
-                      "example": "success"
+                      "type": "boolean",
+                      "example": true
                     },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "session_id": {
-                          "type": "string",
-                          "example": "session_123456"
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "succeeded"
-                        },
-                        "result_url": {
-                          "type": "string",
-                          "example": "https://nc-cdn.oss-us-west-1.aliyuncs.com/notegpt/web3in1/result.jpg"
-                        },
-                        "prompt": {
-                          "type": "string",
-                          "example": "ubah gambar ini menjadi anime style"
-                        }
-                      }
+                    "result": {
+                      "type": "string",
+                      "example": "https://tmpfiles.org/dl/2336137/1759017881196.jpg"
+                    },
+                    "originalUpload": {
+                      "type": "string",
+                      "example": "https://tmpfiles.org/2336137/uploaded_image.jpg"
                     }
                   }
+                },
+                "example": {
+                  "status": true,
+                  "result": "https://tmpfiles.org/dl/2336137/1759017881196.jpg",
+                  "originalUpload": "https://tmpfiles.org/2336137/uploaded_image.jpg"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request - parameter tidak lengkap",
+            "description": "Bad Request - Data tidak lengkap",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "status": {
-                      "type": "string",
-                      "example": "error"
+                      "type": "boolean",
+                      "example": false
                     },
                     "message": {
                       "type": "string",
-                      "example": "Prompt dan gambar diperlukan"
+                      "example": "Prompt dan file gambar diperlukan"
                     }
                   }
+                },
+                "example": {
+                  "status": false,
+                  "message": "Prompt dan file gambar diperlukan"
                 }
               }
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "Internal Server Error",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "status": {
-                      "type": "string",
-                      "example": "error"
+                      "type": "boolean",
+                      "example": false
                     },
                     "message": {
                       "type": "string",
-                      "example": "Proses gagal di server"
+                      "example": "Gagal memproses gambar"
                     }
                   }
+                },
+                "example": {
+                  "status": false,
+                  "message": "Gagal memproses gambar"
                 }
               }
             }
@@ -141,7 +229,7 @@
     },
     "/api/openai/gpt4-pro": {
       "get": {
-        "summary": "",
+        "summary": "GPT-4 Pro",
         "description": "Gpt 4o Pro",
         "tags": [
           "Openai"
@@ -150,7 +238,7 @@
           {
             "name": "q",
             "in": "query",
-            "description": "`Try Say Hello Gpt!`",
+            "description": "Try Say Hello Gpt!",
             "required": false,
             "schema": {
               "type": "string",
@@ -184,7 +272,7 @@
     },
     "/api/downloader/tiktokdl": {
       "get": {
-        "summary": "",
+        "summary": "TikTok Downloader",
         "description": "tiktok downloader",
         "tags": [
           "Downloader Sosmed"
@@ -193,7 +281,7 @@
           {
             "name": "url",
             "in": "query",
-            "description": "`Try Paste Tiktok Url`",
+            "description": "Try Paste Tiktok Url",
             "required": false,
             "schema": {
               "type": "string",
@@ -227,7 +315,7 @@
     },
     "/api/stalker/ttstalk": {
       "get": {
-        "summary": "",
+        "summary": "TikTok Stalker",
         "description": "tiktok stalker with username",
         "tags": [
           "Stalker Sosial Media"
@@ -236,7 +324,7 @@
           {
             "name": "username",
             "in": "query",
-            "description": "`Try Input Username Tiktok`",
+            "description": "Try Input Username Tiktok",
             "required": false,
             "schema": {
               "type": "string",
@@ -270,7 +358,7 @@
     },
     "/api/stalker/npmstalk": {
       "post": {
-        "summary": "",
+        "summary": "NPM Stalker",
         "description": "Try Input Package Name",
         "tags": [
           "Stalker Sosial Media"
@@ -319,7 +407,7 @@
     },
     "/api/stalker/igstalk": {
       "post": {
-        "summary": "",
+        "summary": "Instagram Stalker",
         "description": "instagram stalker with username",
         "tags": [
           "Stalker Sosial Media"
@@ -368,7 +456,7 @@
     },
     "/api/say": {
       "get": {
-        "summary": "",
+        "summary": "Test Server",
         "description": "test server",
         "tags": [
           "Testings Developer"
@@ -377,7 +465,7 @@
           {
             "name": "q",
             "in": "query",
-            "description": "`Try Say Hello World`",
+            "description": "Try Say Hello World",
             "required": false,
             "schema": {
               "type": "string",
@@ -405,6 +493,40 @@
                 }
               }
             }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NanoBananaResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "description": "Status keberhasilan request"
+          },
+          "result": {
+            "type": "string",
+            "description": "URL hasil edit gambar"
+          },
+          "originalUpload": {
+            "type": "string",
+            "description": "URL upload original (hanya untuk POST)"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "description": "Pesan error"
           }
         }
       }
