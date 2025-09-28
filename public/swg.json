@@ -270,42 +270,117 @@
         }
       }
     },
-    "/api/downloader/tiktokdl": {
-      "get": {
-        "summary": "TikTok Downloader",
-        "description": "tiktok downloader",
-        "tags": [
-          "Downloader Sosmed"
-        ],
-        "parameters": [
-          {
-            "name": "url",
-            "in": "query",
-            "description": "Try Paste Tiktok Url",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "https://vt.tiktok.com/ZSjunPJbq"
-            }
+    
+  "/api/downloader/tiktok": {
+    "get": {
+      "summary": "TikTok Downloader",
+      "description": "Download video atau slideshow dari TikTok",
+      "tags": ["Downloader Sosmed"],
+      "parameters": [
+        {
+          "name": "url",
+          "in": "query",
+          "description": "URL TikTok yang akan didownload",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "example": "https://vt.tiktok.com/ZSjXNEnbC/"
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "original_url": {
+                        "type": "string",
+                        "example": "https://vt.tiktok.com/ZSjXNEnbC/"
+                      },
+                      "type": {
+                        "type": "string",
+                        "example": "video"
+                      },
+                      "urls": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        },
+                        "example": ["https://example.com/video.mp4"]
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "example": "Video Title"
+                          },
+                          "thumbnail": {
+                            "type": "string",
+                            "example": "https://example.com/thumb.jpg"
+                          },
+                          "creator": {
+                            "type": "string",
+                            "example": "username"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00.000Z"
+                  }
                 }
               }
             }
-          },
-          "400": {
-            "description": "parameter format not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
+          }
+        },
+        "400": {
+          "description": "Bad Request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "URL parameter is required"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "Internal Server Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Failed to process TikTok URL"
+                  }
                 }
               }
             }
@@ -313,6 +388,55 @@
         }
       }
     },
+    "post": {
+      "summary": "TikTok Downloader (POST)",
+      "description": "Download video atau slideshow dari TikTok menggunakan POST",
+      "tags": ["Downloader Sosmed"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "URL TikTok yang akan didownload",
+                  "example": "https://vt.tiktok.com/ZSjXNEnbC/"
+                }
+              },
+              "required": ["url"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+    
     "/api/stalker/ttstalk": {
       "get": {
         "summary": "TikTok Stalker",
