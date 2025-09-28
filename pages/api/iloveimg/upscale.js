@@ -1,10 +1,40 @@
 import axios from "axios";
 import cheerio from "cheerio";
-import { fileTypeFromBuffer } from "file-type";
 import path from "path";
 import FormData from "form-data";
 import formidable from "formidable";
 import fs from "fs";
+
+// Simple mime type detector
+function getMimeType(buffer) {
+  const signature = buffer.slice(0, 4).toString('hex');
+  
+  const signatures = {
+    'ffd8ffe0': 'image/jpeg',
+    'ffd8ffe1': 'image/jpeg',
+    'ffd8ffe2': 'image/jpeg',
+    '89504e47': 'image/png',
+    '47494638': 'image/gif',
+    '52494646': 'image/webp',
+    '49492a00': 'image/tiff',
+    '4d4d002a': 'image/tiff'
+  };
+  
+  return signatures[signature] || 'application/octet-stream';
+}
+
+function getFileExtension(mimeType) {
+  const extensions = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/tiff': 'tiff'
+  };
+  
+  return extensions[mimeType] || 'jpg';
+}
 
 class UpscaleImageAPI {
   constructor() {
@@ -92,15 +122,16 @@ class UpscaleImageAPI {
         timeout: 15000,
       });
 
-      const fileType = await fileTypeFromBuffer(imageResponse.data);
-      if (!fileType || !fileType.mime.startsWith("image/")) {
+      const buffer = Buffer.from(imageResponse.data, "binary");
+      const mimeType = getMimeType(buffer);
+      
+      if (!mimeType.startsWith("image/")) {
         throw new Error("File type is not a supported image.");
       }
 
-      const buffer = Buffer.from(imageResponse.data, "binary");
-
       const urlPath = new URL(imageUrl).pathname;
-      const fileName = path.basename(urlPath) || `image.${fileType.ext}`;
+      const ext = getFileExtension(mimeType);
+      const fileName = path.basename(urlPath) || `image.${ext}`;
 
       const form = new FormData();
       form.append("name", fileName);
@@ -112,7 +143,7 @@ class UpscaleImageAPI {
       form.append("pdfforms", "0");
       form.append("pdfresetforms", "0");
       form.append("v", "web.0");
-      form.append("file", buffer, { filename: fileName, contentType: fileType.mime });
+      form.append("file", buffer, { filename: fileName, contentType: mimeType });
 
       const response = await this.api.post("/v1/upload", form, {
         headers: form.getHeaders(),
@@ -125,14 +156,13 @@ class UpscaleImageAPI {
     }
   }
 
-  async uploadFromFile(fileBuffer, fileName) {
+  async uploadFromFile(fileBuffer, fileName, mimeType) {
     if (!this.taskId || !this.api) {
       throw new Error("Task ID or API not available. Run getTaskId() first.");
     }
 
     try {
-      const fileType = await fileTypeFromBuffer(fileBuffer);
-      if (!fileType || !fileType.mime.startsWith("image/")) {
+      if (!mimeType.startsWith("image/")) {
         throw new Error("File type is not a supported image.");
       }
 
@@ -146,7 +176,7 @@ class UpscaleImageAPI {
       form.append("pdfforms", "0");
       form.append("pdfresetforms", "0");
       form.append("v", "web.0");
-      form.append("file", fileBuffer, { filename: fileName, contentType: fileType.mime });
+      form.append("file", fileBuffer, { filename: fileName, contentType: mimeType });
 
       const response = await this.api.post("/v1/upload", form, {
         headers: form.getHeaders(),
@@ -200,11 +230,11 @@ async function scrapeUpscaleFromUrl(imageUrl, scale) {
   return imageBuffer;
 }
 
-async function scrapeUpscaleFromFile(fileBuffer, fileName, scale) {
+async function scrapeUpscaleFromFile(fileBuffer, fileName, mimeType, scale) {
   const upscaler = new UpscaleImageAPI();
   await upscaler.getTaskId();
 
-  const uploadResult = await upscaler.uploadFromFile(fileBuffer, fileName);
+  const uploadResult = await upscaler.uploadFromFile(fileBuffer, fileName, mimeType);
   if (!uploadResult || !uploadResult.server_filename) {
     throw new Error("Failed to upload image.");
   }
@@ -265,11 +295,11 @@ export default async function handler(req, res) {
         });
       }
 
+      console.log('Processing upscale from URL:', image);
       const imageBuffer = await scrapeUpscaleFromUrl(image.trim(), scaleNum);
-      const fileType = await fileTypeFromBuffer(imageBuffer);
       
-      res.setHeader('Content-Type', fileType ? fileType.mime : 'image/jpeg');
-      res.setHeader('Content-Disposition', `inline; filename="upscaled_image.${fileType?.ext || 'jpeg'}"`);
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Content-Disposition', 'inline; filename="upscaled_image.jpg"');
       res.setHeader('Cache-Control', 'public, max-age=3600');
       
       return res.send(imageBuffer);
@@ -320,14 +350,14 @@ export default async function handler(req, res) {
       const fileBuffer = fs.readFileSync(imageFile.filepath);
       const fileName = imageFile.originalFilename || `image.${path.extname(imageFile.filepath)}`;
 
-      const imageBuffer = await scrapeUpscaleFromFile(fileBuffer, fileName, scaleNum);
-      const fileType = await fileTypeFromBuffer(imageBuffer);
+      console.log('Processing upscale from file:', fileName);
+      const imageBuffer = await scrapeUpscaleFromFile(fileBuffer, fileName, imageFile.mimetype, scaleNum);
 
       // Clean up temporary file
       fs.unlinkSync(imageFile.filepath);
 
-      res.setHeader('Content-Type', fileType ? fileType.mime : 'image/jpeg');
-      res.setHeader('Content-Disposition', `inline; filename="upscaled_image.${fileType?.ext || 'jpeg'}"`);
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Content-Disposition', 'inline; filename="upscaled_image.jpg"');
       res.setHeader('Cache-Control', 'public, max-age=3600');
       
       return res.send(imageBuffer);
