@@ -1,16 +1,10 @@
 import axios from "axios";
-import * as cheerio from "cheerio";
+import cheerio from "cheerio";
 import FormData from "form-data";
-import * as tough from "tough-cookie";
+import tough from "tough-cookie";
 
 class SnapTikClient {
-  private config: {
-    baseURL: string;
-    [key: string]: any;
-  };
-  private axios: any;
-
-  constructor(config: object = {}) {
+  constructor(config = {}) {
     this.config = {
       baseURL: "https://snaptik.app",
       ...config,
@@ -32,17 +26,17 @@ class SnapTikClient {
     });
   }
 
-  async get_token(): Promise<string | undefined> {
+  async get_token() {
     const { data } = await this.axios.get("/en2", {
       headers: {
         "Referer": "https://snaptik.app/en2",
       },
     });
     const $ = cheerio.load(data);
-    return $("input[name=\"token\"]").val() as string;
+    return $("input[name=\"token\"]").val();
   }
 
-  async get_script(url: string): Promise<string> {
+  async get_script(url) {
     const form = new FormData();
     const token = await this.get_token();
 
@@ -70,8 +64,8 @@ class SnapTikClient {
     return data;
   }
 
-  async eval_script(script1: string): Promise<{ html: string; oembed_url: string }> {
-    const script2 = await new Promise<string>((resolve) =>
+  async eval_script(script1) {
+    const script2 = await new Promise((resolve) =>
       Function("eval", script1)(resolve)
     );
 
@@ -84,13 +78,13 @@ class SnapTikClient {
           get innerHTML() {
             return html;
           },
-          set innerHTML(t: string) {
+          set innerHTML(t) {
             html = t;
           },
         }),
         app: { showAlert: reject },
         document: { getElementById: () => ({ src: "" }) },
-        fetch: (a: string) => {
+        fetch: (a) => {
           resolve({ html, oembed_url: a });
           return { json: () => ({ thumbnail_url: "" }) };
         },
@@ -107,26 +101,26 @@ class SnapTikClient {
           ...Object.keys(mockObjects),
           script2
         )(...Object.values(mockObjects));
-      } catch (error: any) {
-        console.log("Eval error saved to eval.txt:", error.message);
+      } catch (error) {
+        console.log("Eval error:", error.message);
         reject(error);
       }
     });
   }
 
-  async get_hd_video(hdUrl: string, backupUrl: string): Promise<string> {
+  async get_hd_video(hdUrl, backupUrl) {
     try {
       const { data } = await this.axios.get(hdUrl);
       if (data && data.url) {
         return data.url;
       }
-    } catch (error: any) {
+    } catch (error) {
       console.log("HD URL failed, using backup:", error.message);
     }
     return backupUrl;
   }
 
-  async parse_html(html: string): Promise<any> {
+  async parse_html(html) {
     const $ = cheerio.load(html);
     const isVideo = !$("div.render-wrapper").length;
 
@@ -149,8 +143,8 @@ class SnapTikClient {
         ...$("div.video-links > a:not(a[href=\"/\"])")
           .map((_, elem) => $(elem).attr("href"))
           .get()
-          .filter((url: string | undefined) => url && !url.includes("play.google.com"))
-          .map((x: string) => (x.startsWith("/") ? this.config.baseURL + x : x)),
+          .filter((url) => url && !url.includes("play.google.com"))
+          .map((x) => (x.startsWith("/") ? this.config.baseURL + x : x)),
       ].filter(Boolean);
 
       return {
@@ -180,7 +174,7 @@ class SnapTikClient {
         urls:
           photos.length === 1
             ? photos[0].urls
-            : photos.map((photo: any) => photo.urls),
+            : photos.map((photo) => photo.urls),
         metadata: {
           title: title || null,
           description: title || null,
@@ -191,7 +185,7 @@ class SnapTikClient {
     }
   }
 
-  async process(url: string): Promise<any> {
+  async process(url) {
     try {
       const script = await this.get_script(url);
       const { html, oembed_url } = await this.eval_script(script);
@@ -204,7 +198,7 @@ class SnapTikClient {
         urls: result.urls,
         metadata: result.metadata,
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error("Process error:", error.message);
       return {
         original_url: url,
@@ -214,11 +208,11 @@ class SnapTikClient {
   }
 }
 
-async function scrapeTiktok(url: string) {
+async function scrapeTiktok(url) {
   try {
     const client = new SnapTikClient();
     return await client.process(url);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Tiktok scrape error:", error);
     return null;
   }
@@ -287,7 +281,7 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('API Error:', error);
     return res.status(500).json({
       status: false,
