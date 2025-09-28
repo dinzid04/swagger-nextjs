@@ -271,10 +271,11 @@
       }
     },
     
+    
   "/api/cdn": {
     "get": {
       "summary": "CDN API Information",
-      "description": "Get information about available CDN providers and their features",
+      "description": "Get information about available CDN providers (Tmpfiles & Uguu)",
       "tags": ["CDN Services"],
       "responses": {
         "200": {
@@ -290,7 +291,7 @@
                   },
                   "message": {
                     "type": "string",
-                    "example": "CDN Upload API"
+                    "example": "CDN Upload API - Tmpfiles & Uguu"
                   },
                   "providers": {
                     "type": "array",
@@ -299,11 +300,11 @@
                       "properties": {
                         "name": {
                           "type": "string",
-                          "example": "fileio"
+                          "example": "tmpfiles"
                         },
                         "description": {
-                          "type": "string",
-                          "example": "Simple file sharing with 14 days expiration"
+                          "type": "string", 
+                          "example": "Temporary file hosting with 1 hour expiration"
                         },
                         "maxFileSize": {
                           "type": "string",
@@ -314,71 +315,44 @@
                           "items": {
                             "type": "string"
                           },
-                          "example": ["14 days expiration", "Any file type", "Simple API"]
+                          "example": ["1 hour expiration", "Any file type", "Fast upload"]
                         }
                       }
                     }
                   },
-                  "usage": {
-                    "type": "object",
-                    "properties": {
-                      "post": {
-                        "type": "string",
-                        "example": "Upload file menggunakan multipart/form-data"
-                      },
-                      "parameters": {
-                        "type": "object",
-                        "properties": {
-                          "file": {
-                            "type": "string",
-                            "example": "File yang akan diupload"
-                          },
-                          "provider": {
-                            "type": "string",
-                            "example": "Preferred CDN provider (optional): fileio, tmpfiles, freeimage, litterbox"
-                          }
-                        }
-                      }
-                    }
+                  "priority": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": ["tmpfiles", "uguu", "catbox"]
                   }
                 }
               },
               "example": {
                 "status": true,
-                "message": "CDN Upload API",
+                "message": "CDN Upload API - Tmpfiles & Uguu",
                 "providers": [
-                  {
-                    "name": "fileio",
-                    "description": "Simple file sharing with 14 days expiration",
-                    "maxFileSize": "50MB",
-                    "features": ["14 days expiration", "Any file type", "Simple API"]
-                  },
                   {
                     "name": "tmpfiles",
                     "description": "Temporary file hosting with 1 hour expiration",
                     "maxFileSize": "50MB",
-                    "features": ["1 hour expiration", "Fast upload", "Temporary storage"]
+                    "features": ["1 hour expiration", "Any file type", "Fast upload"]
                   },
                   {
-                    "name": "freeimage",
-                    "description": "Permanent image hosting (images only)",
+                    "name": "uguu",
+                    "description": "Simple file sharing with 1 hour expiration", 
                     "maxFileSize": "50MB",
-                    "features": ["Permanent storage", "Images only", "No registration"]
+                    "features": ["1 hour expiration", "Any file type", "Simple API"]
                   },
                   {
-                    "name": "litterbox",
-                    "description": "Temporary file storage with 24 hours expiration",
+                    "name": "catbox",
+                    "description": "Permanent file storage",
                     "maxFileSize": "50MB",
-                    "features": ["24 hours expiration", "Any file type", "Catbox network"]
+                    "features": ["Permanent storage", "Any file type", "Reliable"]
                   }
                 ],
-                "usage": {
-                  "post": "Upload file menggunakan multipart/form-data",
-                  "parameters": {
-                    "file": "File yang akan diupload",
-                    "provider": "Preferred CDN provider (optional): fileio, tmpfiles, freeimage, litterbox"
-                  }
-                }
+                "priority": ["tmpfiles", "uguu", "catbox"]
               }
             }
           }
@@ -387,7 +361,7 @@
     },
     "post": {
       "summary": "Upload File to CDN",
-      "description": "Upload file to CDN and get public URL",
+      "description": "Upload file to CDN (Tmpfiles -> Uguu -> Catbox) and get public URL",
       "tags": ["CDN Services"],
       "requestBody": {
         "required": true,
@@ -400,12 +374,6 @@
                   "type": "string",
                   "format": "binary",
                   "description": "File to upload (max 50MB)"
-                },
-                "provider": {
-                  "type": "string",
-                  "description": "Preferred CDN provider",
-                  "enum": ["fileio", "tmpfiles", "freeimage", "litterbox"],
-                  "example": "fileio"
                 }
               },
               "required": ["file"]
@@ -415,7 +383,7 @@
       },
       "responses": {
         "200": {
-          "description": "Success",
+          "description": "Success", 
           "content": {
             "application/json": {
               "schema": {
@@ -427,7 +395,7 @@
                   },
                   "message": {
                     "type": "string",
-                    "example": "File uploaded successfully"
+                    "example": "File uploaded successfully to tmpfiles.org"
                   },
                   "data": {
                     "type": "object",
@@ -445,86 +413,24 @@
                         "example": "image/jpeg"
                       },
                       "url": {
+                        "type": "string", 
+                        "example": "https://tmpfiles.org/123456/image.jpg"
+                      },
+                      "download_url": {
                         "type": "string",
-                        "example": "https://file.io/abc123"
+                        "example": "https://tmpfiles.org/dl/123456/image.jpg"
                       },
                       "provider": {
                         "type": "string",
-                        "example": "file.io"
+                        "example": "tmpfiles.org"
                       },
                       "expires": {
                         "type": "string",
-                        "example": "14 days"
-                      },
-                      "timestamp": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-01-01T00:00:00.000Z"
+                        "example": "1 hour"
                       }
                     }
                   }
                 }
-              },
-              "example": {
-                "status": true,
-                "message": "File uploaded successfully",
-                "data": {
-                  "filename": "image.jpg",
-                  "size": 1024000,
-                  "mimetype": "image/jpeg",
-                  "url": "https://file.io/abc123",
-                  "provider": "file.io",
-                  "expires": "14 days",
-                  "timestamp": "2024-01-01T00:00:00.000Z"
-                }
-              }
-            }
-          }
-        },
-        "400": {
-          "description": "Bad Request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "boolean",
-                    "example": false
-                  },
-                  "message": {
-                    "type": "string",
-                    "example": "File is required"
-                  }
-                }
-              },
-              "example": {
-                "status": false,
-                "message": "File is required"
-              }
-            }
-          }
-        },
-        "500": {
-          "description": "Internal Server Error",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "boolean",
-                    "example": false
-                  },
-                  "message": {
-                    "type": "string",
-                    "example": "Upload failed"
-                  }
-                }
-              },
-              "example": {
-                "status": false,
-                "message": "All CDN providers failed"
               }
             }
           }
@@ -532,6 +438,7 @@
       }
     }
   },
+                                      
   
   "/api/downloader/tiktok": {
     "get": {
