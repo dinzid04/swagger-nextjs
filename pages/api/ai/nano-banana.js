@@ -2,6 +2,7 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import formidable from 'formidable';
 
 export const config = {
   api: {
@@ -9,72 +10,18 @@ export const config = {
   },
 };
 
-// Simple file upload handler tanpa formidable
-async function handleFileUpload(req) {
+async function parseFormData(req) {
   return new Promise((resolve, reject) => {
-    const chunks = [];
-    let boundary = '';
-    
-    req.on('data', (chunk) => chunks.push(chunk));
-    req.on('end', () => {
-      try {
-        const buffer = Buffer.concat(chunks);
-        const contentType = req.headers['content-type'];
-        
-        if (!contentType || !contentType.includes('multipart/form-data')) {
-          reject(new Error('Content-Type must be multipart/form-data'));
-          return;
-        }
-        
-        boundary = contentType.split('boundary=')[1];
-        const parts = buffer.toString().split(`--${boundary}`);
-        
-        const fields = {};
-        let fileData = null;
-        
-        for (const part of parts) {
-          if (part.includes('Content-Disposition')) {
-            const nameMatch = part.match(/name="([^"]+)"/);
-            
-            if (nameMatch) {
-              const name = nameMatch[1];
-              
-              if (part.includes('filename="')) {
-                // File upload
-                const filenameMatch = part.match(/filename="([^"]+)"/);
-                const contentTypeMatch = part.match(/Content-Type: (.+)/);
-                
-                if (filenameMatch) {
-                  const filename = filenameMatch[1];
-                  const fileContent = part.split('\r\n\r\n')[1]?.split(`\r\n--${boundary}`)[0];
-                  
-                  if (fileContent) {
-                    const tempFilename = `/tmp/${uuidv4()}_${filename}`;
-                    fs.writeFileSync(tempFilename, fileContent);
-                    
-                    fileData = {
-                      filepath: tempFilename,
-                      originalFilename: filename,
-                      contentType: contentTypeMatch ? contentTypeMatch[1] : 'application/octet-stream'
-                    };
-                  }
-                }
-              } else {
-                // Regular field
-                const value = part.split('\r\n\r\n')[1]?.split('\r\n')[0];
-                if (value) fields[name] = value;
-              }
-            }
-          }
-        }
-        
-        resolve({ fields, file: fileData });
-      } catch (error) {
-        reject(error);
-      }
+    const form = formidable({
+      uploadDir: '/tmp',
+      keepExtensions: true,
+      maxFileSize: 10 * 1024 * 1024,
     });
-    
-    req.on('error', reject);
+
+    form.parse(req, (err, fields, files) => {
+      if (err) reject(err);
+      resolve({ fields, files });
+    });
   });
 }
 
@@ -93,10 +40,7 @@ async function uploadToCatbox(filePath, originalFilename) {
     timeout: 30000
   });
 
-  if (response.data && response.data.startsWith('http')) {
-    return response.data;
-  }
-  throw new Error('Upload failed');
+  return response.data;
 }
 
 async function processNanoBanana(imageUrl, prompt) {
@@ -109,10 +53,7 @@ async function processNanoBanana(imageUrl, prompt) {
     timeout: 60000
   });
 
-  if (response.data?.status === true && response.data?.result) {
-    return response.data.result;
-  }
-  throw new Error('API response error');
+  return response.data.result;
 }
 
 export default async function handler(req, res) {
@@ -122,61 +63,103 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  try {
-    if (req.method === 'GET') {
-      const { prompt, imageUrl } = req.query;
-      
-      if (!prompt || !imageUrl) {
-        return res.status(400).json({ 
-          status: false, 
-          message: 'Missing parameters' 
-        });
-      }
+  // GET method - sudah bekerja
+  if (req.method === 'GET') {
+    const { prompt, imageUrl } = req.query;
+    
+    if (!prompt || !imageUrl) {
+      return res.status(400).json({ 
+        status: false, 
+        message: 'Parameter prompt dan imageUrl diperlukan' 
+      });
+    }
 
+    try {
       const result = await processNanoBanana(imageUrl, prompt);
       return res.json({ status: true, result });
-
-    } else if (req.method === 'POST') {
-      const { fields, file } = await handleFileUpload(req);
-      
-      if (!file) {
-        return res.status(400).json({ 
-          status: false, 
-          message: 'No file uploaded' 
-        });
-      }
-
-      if (!fields.prompt) {
-        // Clean up file
-        if (fs.existsSync(file.filepath)) {
-          fs.unlinkSync(file.filepath);
-        }
-        return res.status(400).json({ 
-          status: false, 
-          message: 'Prompt is required' 
-        });
-      }
-
-      try {
-        const cdnUrl = await uploadToCatbox(file.filepath, file.originalFilename);
-        const result = await processNanoBanana(cdnUrl, fields.prompt);
-
-        res.json({
-          status: true,
-          result: result,
-          originalUpload: cdnUrl
-        });
-      } finally {
-        // Clean up
-        if (fs.existsSync(file.filepath)) {
-          fs.unlinkSync(file.filepath);
-        }
-      }
-    } else {
-      res.status(405).json({ status: false, message: 'Method not allowed' });
+    } catch (error) {
+      return res.status(500).json({ 
+        status: false, 
+        message: error.message 
+      });
     }
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ status: false, message: error.message });
   }
+
+  // POST method - yang perlu diperbaiki
+  if (req.method === 'POST') {
+    try {
+      console.log('Processing POST request...');
+      
+      const { fields, files } = await parseFormData(req);
+      console.log('Parsed fields:', fields);
+      console.log('Parsed files:', files);
+
+      const prompt = fields.prompt;
+      const imageFile = files.image;
+
+      if (!prompt) {
+        return res.status(400).json({ 
+          status: false, 
+          message: 'Prompt diperlukan' 
+        });
+      }
+
+      if (!imageFile) {
+        return res.status(400).json({ 
+          status: false, 
+          message: 'File gambar diperlukan' 
+        });
+      }
+
+      // Handle array vs single file
+      const actualImageFile = Array.isArray(imageFile) ? imageFile[0] : imageFile;
+      
+      if (!actualImageFile.filepath) {
+        return res.status(400).json({ 
+          status: false, 
+          message: 'File path tidak valid' 
+        });
+      }
+
+      console.log('Uploading to Catbox...');
+      const cdnUrl = await uploadToCatbox(actualImageFile.filepath, actualImageFile.originalFilename);
+      console.log('Uploaded to:', cdnUrl);
+
+      console.log('Processing with Nano Banana...');
+      const result = await processNanoBanana(cdnUrl, prompt);
+      console.log('Processing result:', result);
+
+      // Clean up
+      if (fs.existsSync(actualImageFile.filepath)) {
+        fs.unlinkSync(actualImageFile.filepath);
+      }
+
+      return res.json({
+        status: true,
+        result: result,
+        originalUpload: cdnUrl
+      });
+
+    } catch (error) {
+      console.error('POST Error:', error);
+      
+      // Clean up jika ada error
+      if (files?.image) {
+        const imageFile = Array.isArray(files.image) ? files.image[0] : files.image;
+        if (imageFile?.filepath && fs.existsSync(imageFile.filepath)) {
+          fs.unlinkSync(imageFile.filepath);
+        }
+      }
+
+      return res.status(500).json({ 
+        status: false, 
+        message: error.message 
+      });
+    }
+  }
+
+  return res.status(405).json({ 
+    status: false, 
+    message: 'Method tidak diizinkan' 
+  });
 }
