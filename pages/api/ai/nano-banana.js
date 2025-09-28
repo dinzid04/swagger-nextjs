@@ -2,7 +2,6 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import formidable from 'formidable';
 
 export const config = {
   api: {
@@ -10,63 +9,94 @@ export const config = {
   },
 };
 
-async function parseFormData(req) {
+// Simple file upload handler tanpa formidable
+async function handleFileUpload(req) {
   return new Promise((resolve, reject) => {
-    const form = formidable({
-      uploadDir: '/tmp',
-      keepExtensions: true,
-      maxFileSize: 10 * 1024 * 1024,
+    const chunks = [];
+    let boundary = '';
+    
+    req.on('data', (chunk) => chunks.push(chunk));
+    req.on('end', () => {
+      try {
+        const buffer = Buffer.concat(chunks);
+        const contentType = req.headers['content-type'];
+        
+        if (!contentType || !contentType.includes('multipart/form-data')) {
+          reject(new Error('Content-Type must be multipart/form-data'));
+          return;
+        }
+        
+        boundary = contentType.split('boundary=')[1];
+        const parts = buffer.toString().split(`--${boundary}`);
+        
+        const fields = {};
+        let fileData = null;
+        
+        for (const part of parts) {
+          if (part.includes('Content-Disposition')) {
+            const nameMatch = part.match(/name="([^"]+)"/);
+            
+            if (nameMatch) {
+              const name = nameMatch[1];
+              
+              if (part.includes('filename="')) {
+                // File upload
+                const filenameMatch = part.match(/filename="([^"]+)"/);
+                const contentTypeMatch = part.match(/Content-Type: (.+)/);
+                
+                if (filenameMatch) {
+                  const filename = filenameMatch[1];
+                  const fileContent = part.split('\r\n\r\n')[1]?.split(`\r\n--${boundary}`)[0];
+                  
+                  if (fileContent) {
+                    const tempFilename = `/tmp/${uuidv4()}_${filename}`;
+                    fs.writeFileSync(tempFilename, fileContent);
+                    
+                    fileData = {
+                      filepath: tempFilename,
+                      originalFilename: filename,
+                      contentType: contentTypeMatch ? contentTypeMatch[1] : 'application/octet-stream'
+                    };
+                  }
+                }
+              } else {
+                // Regular field
+                const value = part.split('\r\n\r\n')[1]?.split('\r\n')[0];
+                if (value) fields[name] = value;
+              }
+            }
+          }
+        }
+        
+        resolve({ fields, file: fileData });
+      } catch (error) {
+        reject(error);
+      }
     });
-
-    form.parse(req, (err, fields, files) => {
-      if (err) reject(err);
-      resolve({ fields, files });
-    });
+    
+    req.on('error', reject);
   });
 }
 
-async function uploadToCatbox(filePath) {
+async function uploadToCatbox(filePath, originalFilename) {
   const FormData = require('form-data');
   const formData = new FormData();
   
+  const fileName = originalFilename || `image_${uuidv4()}.jpg`;
   const fileStream = fs.createReadStream(filePath);
+  
   formData.append('reqtype', 'fileupload');
-  formData.append('fileToUpload', fileStream, path.basename(filePath));
+  formData.append('fileToUpload', fileStream, fileName);
 
   const response = await axios.post('https://catbox.moe/user/api.php', formData, {
-    headers: {
-      ...formData.getHeaders(),
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    },
+    headers: formData.getHeaders(),
     timeout: 30000
   });
 
   if (response.data && response.data.startsWith('http')) {
     return response.data;
   }
-  throw new Error('Upload failed: ' + response.data);
-}
-
-async function uploadToLitterbox(filePath) {
-  const FormData = require('form-data');
-  const formData = new FormData();
-  
-  const fileStream = fs.createReadStream(filePath);
-  formData.append('reqtype', 'fileupload');
-  formData.append('time', '1h');
-  formData.append('fileToUpload', fileStream, path.basename(filePath));
-
-  const response = await axios.post('https://litterbox.catbox.moe/resources/internals/api.php', formData, {
-    headers: {
-      ...formData.getHeaders(),
-    },
-    timeout: 30000
-  });
-
-  if (response.data && response.data.startsWith('http')) {
-    return response.data;
-  }
-  throw new Error('Upload failed: ' + response.data);
+  throw new Error('Upload failed');
 }
 
 async function processNanoBanana(imageUrl, prompt) {
@@ -76,9 +106,6 @@ async function processNanoBanana(imageUrl, prompt) {
   const apiUrl = `https://api.nekolabs.my.id/ai/gemini/nano-banana?prompt=${encodedPrompt}&imageUrl=${encodedImageUrl}`;
 
   const response = await axios.get(apiUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    },
     timeout: 60000
   });
 
@@ -98,47 +125,51 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       const { prompt, imageUrl } = req.query;
+      
       if (!prompt || !imageUrl) {
-        return res.status(400).json({ status: false, message: 'Parameter required' });
+        return res.status(400).json({ 
+          status: false, 
+          message: 'Missing parameters' 
+        });
       }
 
       const result = await processNanoBanana(imageUrl, prompt);
       return res.json({ status: true, result });
 
     } else if (req.method === 'POST') {
-      const { fields, files } = await parseFormData(req);
-      const prompt = fields.prompt;
-      const imageFile = files.image;
-
-      if (!prompt || !imageFile) {
-        return res.status(400).json({ status: false, message: 'Prompt and image required' });
+      const { fields, file } = await handleFileUpload(req);
+      
+      if (!file) {
+        return res.status(400).json({ 
+          status: false, 
+          message: 'No file uploaded' 
+        });
       }
 
-      const imagePath = imageFile.filepath;
-      let cdnUrl, result;
+      if (!fields.prompt) {
+        // Clean up file
+        if (fs.existsSync(file.filepath)) {
+          fs.unlinkSync(file.filepath);
+        }
+        return res.status(400).json({ 
+          status: false, 
+          message: 'Prompt is required' 
+        });
+      }
 
       try {
-        // Try Catbox first
-        cdnUrl = await uploadToCatbox(imagePath);
-        
-        // Fallback to Litterbox for large files or if Catbox fails
-        const stats = fs.statSync(imagePath);
-        if (stats.size > 5 * 1024 * 1024) {
-          cdnUrl = await uploadToLitterbox(imagePath);
-        }
-        
-        result = await processNanoBanana(cdnUrl, prompt);
+        const cdnUrl = await uploadToCatbox(file.filepath, file.originalFilename);
+        const result = await processNanoBanana(cdnUrl, fields.prompt);
 
         res.json({
           status: true,
           result: result,
           originalUpload: cdnUrl
         });
-      } catch (error) {
-        throw error;
       } finally {
-        if (fs.existsSync(imagePath)) {
-          fs.unlinkSync(imagePath);
+        // Clean up
+        if (fs.existsSync(file.filepath)) {
+          fs.unlinkSync(file.filepath);
         }
       }
     } else {
