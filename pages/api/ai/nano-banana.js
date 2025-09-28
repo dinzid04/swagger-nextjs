@@ -29,28 +29,18 @@ async function uploadToCatbox(filePath, originalFilename) {
   const FormData = require('form-data');
   const formData = new FormData();
   
-  // Generate nama file yang aman untuk Catbox
-  const fileExt = path.extname(originalFilename || 'image.jpg');
-  const fileName = `image_${uuidv4()}${fileExt}`;
-  
+  const fileName = originalFilename || `image_${uuidv4()}.jpg`;
   const fileStream = fs.createReadStream(filePath);
+  
   formData.append('reqtype', 'fileupload');
   formData.append('fileToUpload', fileStream, fileName);
-
-  console.log('Uploading to Catbox...', fileName);
 
   const response = await axios.post('https://catbox.moe/user/api.php', formData, {
     headers: formData.getHeaders(),
     timeout: 30000
   });
 
-  console.log('Catbox response:', response.data);
-
-  if (response.data && response.data.startsWith('http')) {
-    return response.data;
-  }
-  
-  throw new Error('Upload to Catbox failed: ' + response.data);
+  return response.data;
 }
 
 async function processNanoBanana(imageUrl, prompt) {
@@ -59,44 +49,11 @@ async function processNanoBanana(imageUrl, prompt) {
   
   const apiUrl = `https://api.nekolabs.my.id/ai/gemini/nano-banana?prompt=${encodedPrompt}&imageUrl=${encodedImageUrl}`;
 
-  console.log('Processing with Nano Banana...', apiUrl);
-
   const response = await axios.get(apiUrl, {
     timeout: 60000
   });
 
-  console.log('Nano Banana response:', response.data);
-
-  if (response.data && response.data.status === true && response.data.result) {
-    return response.data.result;
-  }
-  
-  throw new Error('Nano Banana processing failed');
-}
-
-// Fungsi untuk convert tmpfiles.org URL ke Catbox (jika perlu)
-async function convertToCatbox(tmpfilesUrl) {
-  try {
-    // Download gambar dari tmpfiles.org
-    const response = await axios.get(tmpfilesUrl, {
-      responseType: 'arraybuffer',
-      timeout: 30000
-    });
-    
-    // Simpan sementara
-    const tempPath = `/tmp/temp_${uuidv4()}.jpg`;
-    fs.writeFileSync(tempPath, response.data);
-    
-    // Upload ke Catbox
-    const catboxUrl = await uploadToCatbox(tempPath, 'converted_image.jpg');
-    
-    // Clean up
-    fs.unlinkSync(tempPath);
-    
-    return catboxUrl;
-  } catch (error) {
-    throw new Error('Failed to convert to Catbox: ' + error.message);
-  }
+  return response.data.result;
 }
 
 export default async function handler(req, res) {
@@ -106,9 +63,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // GET method - convert result ke Catbox
+  // GET method - sudah bekerja
   if (req.method === 'GET') {
-    const { prompt, imageUrl, useCatbox = 'true' } = req.query;
+    const { prompt, imageUrl } = req.query;
     
     if (!prompt || !imageUrl) {
       return res.status(400).json({ 
@@ -119,22 +76,7 @@ export default async function handler(req, res) {
 
     try {
       const result = await processNanoBanana(imageUrl, prompt);
-      
-      // Jika ingin menggunakan Catbox untuk result juga
-      if (useCatbox === 'true' && result.includes('tmpfiles.org')) {
-        console.log('Converting tmpfiles.org result to Catbox...');
-        const catboxResult = await convertToCatbox(result);
-        
-        return res.json({ 
-          status: true, 
-          result: catboxResult,
-          originalResult: result,
-          message: 'Result converted to Catbox'
-        });
-      }
-      
       return res.json({ status: true, result });
-      
     } catch (error) {
       return res.status(500).json({ 
         status: false, 
@@ -143,12 +85,15 @@ export default async function handler(req, res) {
     }
   }
 
-  // POST method - gunakan Catbox untuk semua
+  // POST method - yang perlu diperbaiki
   if (req.method === 'POST') {
     try {
-      console.log('Processing POST request with Catbox...');
+      console.log('Processing POST request...');
       
       const { fields, files } = await parseFormData(req);
+      console.log('Parsed fields:', fields);
+      console.log('Parsed files:', files);
+
       const prompt = fields.prompt;
       const imageFile = files.image;
 
@@ -166,6 +111,7 @@ export default async function handler(req, res) {
         });
       }
 
+      // Handle array vs single file
       const actualImageFile = Array.isArray(imageFile) ? imageFile[0] : imageFile;
       
       if (!actualImageFile.filepath) {
@@ -175,26 +121,13 @@ export default async function handler(req, res) {
         });
       }
 
-      // 1. Upload gambar input ke Catbox
-      console.log('Uploading input image to Catbox...');
-      const inputCatboxUrl = await uploadToCatbox(actualImageFile.filepath, actualImageFile.originalFilename);
-      console.log('Input image uploaded to Catbox:', inputCatboxUrl);
+      console.log('Uploading to Catbox...');
+      const cdnUrl = await uploadToCatbox(actualImageFile.filepath, actualImageFile.originalFilename);
+      console.log('Uploaded to:', cdnUrl);
 
-      // 2. Process dengan Nano Banana
       console.log('Processing with Nano Banana...');
-      const nanoBananaResult = await processNanoBanana(inputCatboxUrl, prompt);
-      console.log('Nano Banana raw result:', nanoBananaResult);
-
-      let finalResult = nanoBananaResult;
-      let converted = false;
-
-      // 3. Convert result ke Catbox jika masih pakai tmpfiles.org
-      if (nanoBananaResult.includes('tmpfiles.org')) {
-        console.log('Converting result from tmpfiles.org to Catbox...');
-        finalResult = await convertToCatbox(nanoBananaResult);
-        converted = true;
-        console.log('Result converted to Catbox:', finalResult);
-      }
+      const result = await processNanoBanana(cdnUrl, prompt);
+      console.log('Processing result:', result);
 
       // Clean up
       if (fs.existsSync(actualImageFile.filepath)) {
@@ -203,10 +136,8 @@ export default async function handler(req, res) {
 
       return res.json({
         status: true,
-        result: finalResult,
-        originalUpload: inputCatboxUrl,
-        converted: converted,
-        message: converted ? 'Result converted to Catbox' : 'Result already using Catbox'
+        result: result,
+        originalUpload: cdnUrl
       });
 
     } catch (error) {
