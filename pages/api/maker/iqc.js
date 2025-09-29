@@ -1,4 +1,7 @@
 import axios from 'axios';
+import FormData from 'form-data';
+import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -67,13 +70,45 @@ export default async function handler(req, res) {
       timeout: 30000
     });
 
-    // Set response headers untuk image
-    res.setHeader('Content-Type', 'image/jpeg');
-    res.setHeader('Content-Disposition', 'inline; filename="iphone-quoted.jpg"');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    const imageBuffer = response.data;
 
-    // Send image buffer
-    return res.send(response.data);
+    // Handle different response based on method
+    if (req.method === 'GET') {
+      // Untuk GET: Upload ke CDN dulu, return URL
+      try {
+        // Upload ke tmpfiles.org
+        const cdnUrl = await uploadToTmpfiles(imageBuffer, `iphone-quoted-${uuidv4()}.jpg`);
+        
+        return res.status(200).json({
+          status: true,
+          message: 'iPhone quoted image generated successfully',
+          data: {
+            url: cdnUrl,
+            text: messageText,
+            timestamp: new Date().toISOString(),
+            info: {
+              time: time,
+              battery: `${batteryPercentage}%`,
+              carrier: 'INDOSAT'
+            }
+          }
+        });
+
+      } catch (uploadError) {
+        console.error('CDN upload failed:', uploadError);
+        // Fallback: return image langsung jika CDN gagal
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Content-Disposition', 'inline; filename="iphone-quoted.jpg"');
+        return res.send(imageBuffer);
+      }
+
+    } else if (req.method === 'POST') {
+      // Untuk POST: Return image langsung
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Content-Disposition', 'inline; filename="iphone-quoted.jpg"');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.send(imageBuffer);
+    }
 
   } catch (error) {
     console.error('API Error:', error);
@@ -83,4 +118,23 @@ export default async function handler(req, res) {
       message: error.message || 'Failed to generate iPhone quoted image'
     });
   }
+}
+
+// Function untuk upload ke tmpfiles.org
+async function uploadToTmpfiles(imageBuffer, filename) {
+  const formData = new FormData();
+  formData.append('files[]', imageBuffer, { filename });
+
+  const response = await axios.post('https://tmpfiles.org/api/v1/upload', formData, {
+    headers: formData.getHeaders(),
+    timeout: 30000
+  });
+
+  if (response.data?.success && response.data?.data?.url) {
+    const downloadUrl = response.data.data.url;
+    const directUrl = downloadUrl.replace('/dl/', '/');
+    return directUrl;
+  }
+  
+  throw new Error('Upload to tmpfiles.org failed');
 }
