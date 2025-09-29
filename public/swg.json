@@ -371,10 +371,12 @@
     }
   },
     
+
+
   "/api/maker/iqc": {
     "get": {
       "summary": "iPhone Quoted Creator",
-      "description": "Generate iPhone-style quoted message image",
+      "description": "Generate iPhone-style quoted message image and upload to CDN",
       "tags": ["Maker"],
       "parameters": [
         {
@@ -390,61 +392,84 @@
       ],
       "responses": {
         "200": {
-          "description": "Success - Returns iPhone quoted image",
+          "description": "Success - Returns CDN URL",
           "content": {
-            "image/jpeg": {
+            "application/json": {
               "schema": {
-                "type": "string",
-                "format": "binary"
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "iPhone quoted image generated successfully"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "example": "https://tmpfiles.org/123456/iphone-quoted.jpg"
+                      },
+                      "text": {
+                        "type": "string",
+                        "example": "Biji ayam"
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "info": {
+                        "type": "object",
+                        "properties": {
+                          "time": {
+                            "type": "string",
+                            "example": "14:30"
+                          },
+                          "battery": {
+                            "type": "string",
+                            "example": "75%"
+                          },
+                          "carrier": {
+                            "type": "string",
+                            "example": "INDOSAT"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "status": true,
+                "message": "iPhone quoted image generated successfully",
+                "data": {
+                  "url": "https://tmpfiles.org/123456/iphone-quoted.jpg",
+                  "text": "Biji ayam",
+                  "timestamp": "2024-01-01T14:30:00.000Z",
+                  "info": {
+                    "time": "14:30",
+                    "battery": "75%",
+                    "carrier": "INDOSAT"
+                  }
+                }
               }
             }
           }
         },
         "400": {
-          "description": "Bad Request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "boolean",
-                    "example": false
-                  },
-                  "message": {
-                    "type": "string",
-                    "example": "Parameter text is required"
-                  }
-                }
-              }
-            }
-          }
+          "description": "Bad Request"
         },
         "500": {
-          "description": "Internal Server Error",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "boolean",
-                    "example": false
-                  },
-                  "message": {
-                    "type": "string",
-                    "example": "Failed to generate iPhone quoted image"
-                  }
-                }
-              }
-            }
-          }
+          "description": "Internal Server Error"
         }
       }
     },
     "post": {
       "summary": "iPhone Quoted Creator (POST)",
-      "description": "Generate iPhone-style quoted message image using POST",
+      "description": "Generate iPhone-style quoted message image and return directly",
       "tags": ["Maker"],
       "requestBody": {
         "required": true,
@@ -466,7 +491,7 @@
       },
       "responses": {
         "200": {
-          "description": "Success - Returns iPhone quoted image",
+          "description": "Success - Returns image directly",
           "content": {
             "image/jpeg": {
               "schema": {
