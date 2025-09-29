@@ -1,6 +1,5 @@
 import axios from 'axios';
 import FormData from 'form-data';
-import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req, res) {
@@ -74,10 +73,22 @@ export default async function handler(req, res) {
 
     // Handle different response based on method
     if (req.method === 'GET') {
-      // Untuk GET: Upload ke CDN dulu, return URL
+      // Untuk GET: Upload ke CDN dulu, return JSON dengan URL
       try {
-        // Upload ke tmpfiles.org
-        const cdnUrl = await uploadToTmpfiles(imageBuffer, `iphone-quoted-${uuidv4()}.jpg`);
+        // Coba tmpfiles.org dulu
+        let cdnUrl;
+        let provider = 'tmpfiles.org';
+        
+        try {
+          cdnUrl = await uploadToTmpfiles(imageBuffer, `iphone-quoted-${uuidv4()}.jpg`);
+          console.log('Success with tmpfiles.org');
+        } catch (tmpfilesError) {
+          console.log('Tmpfiles failed, trying uguu.se...');
+          // Fallback ke uguu.se
+          cdnUrl = await uploadToUguu(imageBuffer, `iphone-quoted-${uuidv4()}.jpg`);
+          provider = 'uguu.se';
+          console.log('Success with uguu.se');
+        }
         
         return res.status(200).json({
           status: true,
@@ -85,6 +96,7 @@ export default async function handler(req, res) {
           data: {
             url: cdnUrl,
             text: messageText,
+            provider: provider,
             timestamp: new Date().toISOString(),
             info: {
               time: time,
@@ -95,11 +107,12 @@ export default async function handler(req, res) {
         });
 
       } catch (uploadError) {
-        console.error('CDN upload failed:', uploadError);
-        // Fallback: return image langsung jika CDN gagal
-        res.setHeader('Content-Type', 'image/jpeg');
-        res.setHeader('Content-Disposition', 'inline; filename="iphone-quoted.jpg"');
-        return res.send(imageBuffer);
+        console.error('All CDN upload failed:', uploadError);
+        // Return error JSON
+        return res.status(500).json({
+          status: false,
+          message: 'Failed to upload image to CDN: ' + uploadError.message
+        });
       }
 
     } else if (req.method === 'POST') {
@@ -130,11 +143,35 @@ async function uploadToTmpfiles(imageBuffer, filename) {
     timeout: 30000
   });
 
+  console.log('Tmpfiles response:', response.data);
+
   if (response.data?.success && response.data?.data?.url) {
     const downloadUrl = response.data.data.url;
     const directUrl = downloadUrl.replace('/dl/', '/');
     return directUrl;
   }
   
-  throw new Error('Upload to tmpfiles.org failed');
+  throw new Error('Upload to tmpfiles.org failed: ' + JSON.stringify(response.data));
+}
+
+// Function untuk upload ke uguu.se
+async function uploadToUguu(imageBuffer, filename) {
+  const formData = new FormData();
+  formData.append('files[]', imageBuffer, { filename });
+
+  const response = await axios.post('https://uguu.se/upload.php', formData, {
+    headers: {
+      ...formData.getHeaders(),
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    timeout: 30000
+  });
+
+  console.log('Uguu response:', response.data);
+
+  if (response.data && response.data.files && response.data.files[0]) {
+    return response.data.files[0].url;
+  }
+  
+  throw new Error('Upload to uguu.se failed: ' + JSON.stringify(response.data));
 }
