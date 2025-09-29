@@ -705,6 +705,168 @@
     }
   },
     
+  "/api/ngl/spam": {
+    "get": {
+      "summary": "NGL Spam Tools",
+      "description": "Tools untuk spam NGL (Send Anonymous Messages)",
+      "tags": ["Spam Tools"],
+      "parameters": [
+        {
+          "name": "action",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["info", "check", "spam"]
+          },
+          "description": "Action type",
+          "example": "info"
+        },
+        {
+          "name": "link",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "NGL link (https://ngl.link/username)",
+          "example": "https://ngl.link/exampleuser"
+        },
+        {
+          "name": "message",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Message to send",
+          "example": "Hello from API"
+        },
+        {
+          "name": "count",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "description": "Number of messages to send",
+          "example": 3
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "examples": {
+                "info": {
+                  "summary": "API Information",
+                  "value": {
+                    "status": true,
+                    "creator": "DinzID",
+                    "service": "NGL Spam API",
+                    "endpoints": {
+                      "post_spam": "POST /api/ngl/spam",
+                      "get_quick": "GET /api/ngl/spam?action=spam",
+                      "check": "GET /api/ngl/spam?action=check",
+                      "info": "GET /api/ngl/spam?action=info"
+                    }
+                  }
+                },
+                "check": {
+                  "summary": "Link Check",
+                  "value": {
+                    "status": true,
+                    "valid": true,
+                    "username": "exampleuser",
+                    "checked_at": "2024-01-01T00:00:00.000Z"
+                  }
+                },
+                "spam": {
+                  "summary": "Spam Result",
+                  "value": {
+                    "status": true,
+                    "creator": "DinzID",
+                    "result": {
+                      "username": "exampleuser",
+                      "message": "Hello from API",
+                      "total_attempts": 3,
+                      "success": 3,
+                      "failed": 0,
+                      "success_rate": "100.0%",
+                      "final_message": "Selesai mengirim 3 pesan ke exampleuser"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "Spam NGL via POST",
+      "description": "Send multiple anonymous messages to NGL link",
+      "tags": ["Spam Tools"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "link": {
+                  "type": "string",
+                  "description": "NGL link",
+                  "example": "https://ngl.link/exampleuser"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Message to send",
+                  "example": "Hello from API"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50,
+                  "description": "Number of messages",
+                  "example": 3
+                }
+              },
+              "required": ["link", "message", "count"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "example": {
+                "status": true,
+                "creator": "DinzID",
+                "result": {
+                  "username": "exampleuser",
+                  "message": "Hello from API",
+                  "total_attempts": 3,
+                  "success": 3,
+                  "failed": 0,
+                  "success_rate": "100.0%",
+                  "final_message": "Selesai mengirim 3 pesan ke exampleuser"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request"
+        }
+      }
+    }
+  },
     "/api/stalker/ttstalk": {
       "get": {
         "summary": "TikTok Stalker",
