@@ -94,7 +94,7 @@ export default async function handler(req, res) {
                         count: "Jumlah pesan (1-50)"
                     },
                     limits: {
-                        max_count: 50,
+                        max_count: 50000000000,
                         delay: "1.5 detik per request",
                         rate_limit: "Hindari spam berlebihan"
                     },
@@ -167,7 +167,7 @@ export default async function handler(req, res) {
                 }
 
                 const jumlah = parseInt(count);
-                if (isNaN(jumlah) || jumlah < 1 || jumlah > 50) {
+                if (isNaN(jumlah) || jumlah < 1 || jumlah > 5000000000) {
                     return res.status(400).json({
                         status: false,
                         error: 'Count harus angka antara 1-50'
@@ -217,7 +217,7 @@ export default async function handler(req, res) {
                 });
             }
 
-            if (!count || count < 1 || count > 50) {
+            if (!count || count < 1 || count > 5000000000000) {
                 return res.status(400).json({
                     status: false,
                     error: 'Parameter count diperlukan (1-50)'
