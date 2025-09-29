@@ -371,6 +371,114 @@
     }
   },
     
+  "/api/maker/iqc": {
+    "get": {
+      "summary": "iPhone Quoted Creator",
+      "description": "Generate iPhone-style quoted message image",
+      "tags": ["Maker"],
+      "parameters": [
+        {
+          "name": "text",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Message text to display in iPhone quote",
+          "example": "Biji ayam"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success - Returns iPhone quoted image",
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Parameter text is required"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "Internal Server Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Failed to generate iPhone quoted image"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "iPhone Quoted Creator (POST)",
+      "description": "Generate iPhone-style quoted message image using POST",
+      "tags": ["Maker"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "Message text to display in iPhone quote",
+                  "example": "Biji ayam"
+                }
+              },
+              "required": ["text"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success - Returns iPhone quoted image",
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "/api/cdn": {
     "get": {
       "summary": "CDN API Information",
