@@ -1,9 +1,97 @@
 import axios from 'axios';
-import FormData from 'form-data';
+import formidable from 'formidable';
+import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import FormData from 'form-data';
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+// Upload ke CDN
+async function uploadToCDN(fileBuffer, filename) {
+  // Coba tmpfiles.org dulu
+  try {
+    const formData = new FormData();
+    formData.append('files[]', fileBuffer, { filename });
+
+    const response = await axios.post('https://tmpfiles.org/api/v1/upload', formData, {
+      headers: formData.getHeaders(),
+      timeout: 30000
+    });
+
+    if (response.data?.success && response.data?.data?.url) {
+      const downloadUrl = response.data.data.url;
+      const directUrl = downloadUrl.replace('/dl/', '/');
+      return { url: directUrl, provider: 'tmpfiles.org' };
+    }
+  } catch (error) {
+    console.log('Tmpfiles failed, trying uguu...');
+  }
+
+  // Fallback ke uguu.se
+  try {
+    const formData = new FormData();
+    formData.append('files[]', fileBuffer, { filename });
+
+    const response = await axios.post('https://uguu.se/upload.php', formData, {
+      headers: {
+        ...formData.getHeaders(),
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      },
+      timeout: 30000
+    });
+
+    if (response.data && response.data.files && response.data.files[0]) {
+      return { url: response.data.files[0].url, provider: 'uguu.se' };
+    }
+  } catch (error) {
+    console.log('Uguu also failed');
+  }
+
+  throw new Error('All CDN providers failed');
+}
+
+// Process GPT-4o request
+async function processGPT4o(text, systemPrompt, imageUrl = null, sessionId = 'neko') {
+  let apiUrl;
+  
+  if (imageUrl) {
+    // Dengan image
+    const params = {
+      text: encodeURIComponent(text),
+      systemPrompt: encodeURIComponent(systemPrompt),
+      imageUrl: encodeURIComponent(imageUrl),
+      sessionId: encodeURIComponent(sessionId)
+    };
+    apiUrl = `https://api.nekolabs.my.id/ai/gpt/4o?text=${params.text}&systemPrompt=${params.systemPrompt}&imageUrl=${params.imageUrl}&sessionId=${params.sessionId}`;
+  } else {
+    // Tanpa image (hanya text)
+    const params = {
+      text: encodeURIComponent(text),
+      systemPrompt: encodeURIComponent(systemPrompt),
+      sessionId: encodeURIComponent(sessionId)
+    };
+    apiUrl = `https://api.nekolabs.my.id/ai/gpt/4o?text=${params.text}&systemPrompt=${params.systemPrompt}&sessionId=${params.sessionId}`;
+  }
+
+  console.log('Calling GPT-4o API:', apiUrl);
+
+  const response = await axios.get(apiUrl, {
+    timeout: 60000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Accept': 'application/json'
+    }
+  });
+
+  return response.data;
+}
 
 export default async function handler(req, res) {
-  // Set CORS headers
+  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -13,207 +101,129 @@ export default async function handler(req, res) {
   }
 
   try {
-    let messageText;
-
-    // Handle GET request
+    // GET method - dengan imageUrl langsung
     if (req.method === 'GET') {
-      const { text } = req.query;
-      messageText = text;
-    } 
-    // Handle POST request
-    else if (req.method === 'POST') {
-      const { text } = req.body;
-      messageText = text;
-    } 
-    else {
-      return res.status(405).json({
-        status: false,
-        message: 'Method not allowed'
-      });
-    }
+      const { text, systemPrompt = 'you are a helpful assistant', imageUrl, sessionId = 'neko' } = req.query;
 
-    // Validasi parameter
-    if (!messageText) {
-      return res.status(400).json({
-        status: false,
-        message: 'Parameter text is required'
-      });
-    }
-
-    if (typeof messageText !== 'string' || messageText.trim().length === 0) {
-      return res.status(400).json({
-        status: false,
-        message: 'Parameter text must be a non-empty string'
-      });
-    }
-
-    // Generate waktu Jakarta
-    const time = new Intl.DateTimeFormat('id-ID', {
-      timeZone: 'Asia/Jakarta',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).format(new Date());
-
-    // Generate battery percentage random
-    const batteryPercentage = Math.floor(Math.random() * 100) + 1;
-
-    // Build API URL
-    const apiUrl = `https://brat.siputzx.my.id/iphone-quoted?time=${encodeURIComponent(time)}&batteryPercentage=${batteryPercentage}&carrierName=INDOSAT&messageText=${encodeURIComponent(messageText.trim())}&emojiStyle=apple`;
-
-    console.log('Generating iPhone quoted image with text:', messageText);
-
-    // Get image from external API
-    const response = await axios.get(apiUrl, {
-      responseType: 'arraybuffer',
-      timeout: 30000
-    });
-
-    const imageBuffer = response.data;
-
-    // Handle different response based on method
-    if (req.method === 'GET') {
-      // Untuk GET: Upload ke CDN dulu, return JSON dengan URL
-      try {
-        // Coba tmpfiles.org dulu
-        let cdnUrl;
-        let provider = 'tmpfiles.org';
-        
-        try {
-          cdnUrl = await uploadToTmpfiles(imageBuffer, `iphone-quoted-${uuidv4()}.jpg`);
-          console.log('Success with tmpfiles.org');
-        } catch (tmpfilesError) {
-          console.log('Tmpfiles failed, trying uguu.se...');
-          // Fallback ke uguu.se
-          cdnUrl = await uploadToUguu(imageBuffer, `iphone-quoted-${uuidv4()}.jpg`);
-          provider = 'uguu.se';
-          console.log('Success with uguu.se');
-        }
-        
-        return res.status(200).json({
-          status: true,
-          message: 'iPhone quoted image generated successfully',
-          data: {
-            url: cdnUrl,
-            text: messageText,
-            provider: provider,
-            timestamp: new Date().toISOString(),
-            info: {
-              time: time,
-              battery: `${batteryPercentage}%`,
-              carrier: 'INDOSAT'
-            }
-          }
-        });
-
-      } catch (uploadError) {
-        console.error('All CDN upload failed:', uploadError);
-        // Return error JSON
-        return res.status(500).json({
+      if (!text) {
+        return res.status(400).json({
           status: false,
-          message: 'Failed to upload image to CDN: ' + uploadError.message
+          message: 'Parameter text is required'
         });
       }
 
-    } else if (req.method === 'POST') {
-      // Untuk POST: Return image langsung (tidak required, bisa JSON atau image)
-      // Cek jika client ingin JSON response (misal dengan header Accept: application/json)
-      const acceptHeader = req.headers.accept || '';
-      
-      if (acceptHeader.includes('application/json')) {
-        // Jika client minta JSON, return JSON dengan URL CDN
-        try {
-          let cdnUrl;
-          let provider = 'tmpfiles.org';
-          
-          try {
-            cdnUrl = await uploadToTmpfiles(imageBuffer, `iphone-quoted-${uuidv4()}.jpg`);
-          } catch (tmpfilesError) {
-            cdnUrl = await uploadToUguu(imageBuffer, `iphone-quoted-${uuidv4()}.jpg`);
-            provider = 'uguu.se';
-          }
-          
-          return res.status(200).json({
-            status: true,
-            message: 'iPhone quoted image generated successfully',
-            data: {
-              url: cdnUrl,
-              text: messageText,
-              provider: provider,
-              timestamp: new Date().toISOString(),
-              info: {
-                time: time,
-                battery: `${batteryPercentage}%`,
-                carrier: 'INDOSAT'
-              }
-            }
-          });
-          
-        } catch (uploadError) {
-          // Jika CDN gagal, tetap return image langsung
-          res.setHeader('Content-Type', 'image/jpeg');
-          res.setHeader('Content-Disposition', 'inline; filename="iphone-quoted.jpg"');
-          res.setHeader('Cache-Control', 'public, max-age=3600');
-          return res.send(imageBuffer);
-        }
-      } else {
-        // Default: return image langsung
-        res.setHeader('Content-Type', 'image/jpeg');
-        res.setHeader('Content-Disposition', 'inline; filename="iphone-quoted.jpg"');
-        res.setHeader('Cache-Control', 'public, max-age=3600');
-        return res.send(imageBuffer);
+      console.log('Processing GPT-4o...');
+      const result = await processGPT4o(text, systemPrompt, imageUrl, sessionId);
+
+      return res.status(200).json({
+        status: true,
+        data: result,
+        sessionId: sessionId,
+        hasImage: !!imageUrl,
+        timestamp: new Date().toISOString()
+      });
+
+    } 
+    // POST method - dengan upload file optional
+    else if (req.method === 'POST') {
+      const form = formidable({
+        uploadDir: '/tmp',
+        keepExtensions: true,
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+      });
+
+      const [fields, files] = await new Promise((resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) reject(err);
+          resolve([fields, files]);
+        });
+      });
+
+      const text = fields.text?.[0] || fields.text;
+      const systemPrompt = fields.systemPrompt?.[0] || fields.systemPrompt || 'you are a helpful assistant';
+      const sessionId = fields.sessionId?.[0] || fields.sessionId || 'neko';
+      const imageFile = files.image?.[0] || files.image;
+
+      if (!text) {
+        return res.status(400).json({
+          status: false,
+          message: 'Parameter text is required'
+        });
       }
+
+      let imageUrl = null;
+      let uploadInfo = null;
+
+      // Jika ada image file, upload ke CDN
+      if (imageFile) {
+        // Validasi file type
+        const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedMimes.includes(imageFile.mimetype)) {
+          return res.status(400).json({
+            status: false,
+            message: `Invalid file type: ${imageFile.mimetype}. Supported: JPG, JPEG, PNG, GIF, WEBP`
+          });
+        }
+
+        console.log('Uploading image to CDN...');
+        
+        const fileBuffer = fs.readFileSync(imageFile.filepath);
+        const filename = imageFile.originalFilename || `image_${uuidv4()}.jpg`;
+        
+        // Upload ke CDN
+        const cdnResult = await uploadToCDN(fileBuffer, filename);
+        
+        // Clean up temporary file
+        fs.unlinkSync(imageFile.filepath);
+
+        imageUrl = cdnResult.url;
+        uploadInfo = {
+          cdnUrl: cdnResult.url,
+          provider: cdnResult.provider,
+          filename: filename
+        };
+
+        console.log('Image uploaded to CDN:', imageUrl);
+      }
+
+      console.log('Processing with GPT-4o...');
+      const gptResult = await processGPT4o(text, systemPrompt, imageUrl, sessionId);
+
+      const responseData = {
+        status: true,
+        data: gptResult,
+        sessionId: sessionId,
+        hasImage: !!imageUrl,
+        timestamp: new Date().toISOString()
+      };
+
+      // Tambahkan uploadInfo jika ada image
+      if (uploadInfo) {
+        responseData.uploadInfo = uploadInfo;
+      }
+
+      return res.status(200).json(responseData);
     }
 
   } catch (error) {
     console.error('API Error:', error);
     
+    // Clean up jika ada file temporary
+    if (req.method === 'POST' && files?.image) {
+      const imageFile = files.image?.[0] || files.image;
+      if (imageFile?.filepath && fs.existsSync(imageFile.filepath)) {
+        fs.unlinkSync(imageFile.filepath);
+      }
+    }
+
     return res.status(500).json({
       status: false,
-      message: error.message || 'Failed to generate iPhone quoted image'
+      message: error.message || 'Internal server error'
     });
   }
-}
 
-// Function untuk upload ke tmpfiles.org
-async function uploadToTmpfiles(imageBuffer, filename) {
-  const formData = new FormData();
-  formData.append('files[]', imageBuffer, { filename });
-
-  const response = await axios.post('https://tmpfiles.org/api/v1/upload', formData, {
-    headers: formData.getHeaders(),
-    timeout: 30000
+  return res.status(405).json({
+    status: false,
+    message: 'Method not allowed'
   });
-
-  console.log('Tmpfiles response:', response.data);
-
-  if (response.data?.success && response.data?.data?.url) {
-    const downloadUrl = response.data.data.url;
-    const directUrl = downloadUrl.replace('/dl/', '/');
-    return directUrl;
-  }
-  
-  throw new Error('Upload to tmpfiles.org failed: ' + JSON.stringify(response.data));
-}
-
-// Function untuk upload ke uguu.se
-async function uploadToUguu(imageBuffer, filename) {
-  const formData = new FormData();
-  formData.append('files[]', imageBuffer, { filename });
-
-  const response = await axios.post('https://uguu.se/upload.php', formData, {
-    headers: {
-      ...formData.getHeaders(),
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    },
-    timeout: 30000
-  });
-
-  console.log('Uguu response:', response.data);
-
-  if (response.data && response.data.files && response.data.files[0]) {
-    return response.data.files[0].url;
-  }
-  
-  throw new Error('Upload to uguu.se failed: ' + JSON.stringify(response.data));
 }
