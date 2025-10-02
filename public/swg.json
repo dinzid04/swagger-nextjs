@@ -10,6 +10,170 @@
     }
   },
   "paths": {
+    
+  "/api/ai/gpt4o": {
+    "get": {
+      "summary": "GPT-4o Vision with Image URL",
+      "description": "Analyze image from URL using GPT-4o vision model",
+      "tags": ["AI"],
+      "parameters": [
+        {
+          "name": "text",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Question or prompt for the image",
+          "example": "jelaskan foto apa ini"
+        },
+        {
+          "name": "systemPrompt",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "default": "you are a helpful assistant"
+          },
+          "description": "System prompt for AI personality",
+          "example": "you are a happy, name you adalah yoimiya"
+        },
+        {
+          "name": "imageUrl",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "url"
+          },
+          "description": "Image URL to analyze",
+          "example": "https://example.com/image.jpg"
+        },
+        {
+          "name": "sessionId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "default": "neko"
+          },
+          "description": "Session ID",
+          "example": "neko"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "result": {
+                        "type": "string",
+                        "example": "Foto ini menampilkan seseorang yang sedang berdiri di tepi jalan..."
+                      }
+                    }
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "example": "neko"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "GPT-4o Vision with File Upload",
+      "description": "Upload image and analyze using GPT-4o vision model",
+      "tags": ["AI"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "description": "Question or prompt for the image",
+                  "example": "jelaskan foto apa ini"
+                },
+                "systemPrompt": {
+                  "type": "string",
+                  "description": "System prompt for AI personality",
+                  "example": "you are a happy, name you adalah yoimiya"
+                },
+                "sessionId": {
+                  "type": "string",
+                  "description": "Session ID",
+                  "example": "neko"
+                },
+                "image": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "Image file to upload and analyze"
+                }
+              },
+              "required": ["text", "image"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object"
+                  },
+                  "uploadInfo": {
+                    "type": "object",
+                    "properties": {
+                      "cdnUrl": {
+                        "type": "string",
+                        "example": "https://tmpfiles.org/123456/image.jpg"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "example": "tmpfiles.org"
+                      }
+                    }
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "example": "neko"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
     "/api/ai/nano-banana": {
       "get": {
         "summary": "Nano Banana AI Image Editor",
