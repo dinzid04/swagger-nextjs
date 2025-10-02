@@ -129,7 +129,7 @@
                   "description": "Image file to upload and analyze"
                 }
               },
-              "required": ["text", "image"]
+              "required": ["text"]
             }
           }
         }
