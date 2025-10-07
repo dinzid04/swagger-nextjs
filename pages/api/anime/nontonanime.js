@@ -3,190 +3,316 @@ import * as cheerio from 'cheerio';
 
 class NontonAnimeID {
     constructor() {
-        this.baseUrl = 'https://s7.nontonanimeid.boats/';
+        this.baseUrl = 'https://nontonanimeid.boats/';
         this.headers = {
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Cache-Control': 'no-cache'
         };
     }
 
     async home() {
         try {
-            let { data } = await axios.get(this.baseUrl, { headers: this.headers });
+            console.log('Fetching home page...');
+            const { data } = await axios.get(this.baseUrl, { 
+                headers: this.headers,
+                timeout: 10000 
+            });
             const $ = cheerio.load(data);
             let result = [];
+            
             $('article.animeseries').each((i, el) => {
-                result.push({
-                    title: $(el).find('h3.title').text().trim(),
-                    img: $(el).find('img').attr('src'),
-                    eps: $(el).find('.episodes').text().trim(),
-                    status: $(el).find('.status').text().trim(),
-                });
+                try {
+                    const title = $(el).find('h3.title').text().trim();
+                    const img = $(el).find('img').attr('src');
+                    const eps = $(el).find('.episodes').text().trim();
+                    const status = $(el).find('.status').text().trim();
+                    
+                    if (title && img) {
+                        result.push({
+                            title,
+                            img: img.startsWith('http') ? img : this.baseUrl + img,
+                            eps: eps || 'Unknown',
+                            status: status || 'Unknown',
+                        });
+                    }
+                } catch (e) {
+                    console.log('Error parsing anime item:', e.message);
+                }
             });
-            return result;
+            
+            return result.length > 0 ? result : { error: 'No anime found on home page' };
         } catch (error) {
-            return { error: error.message };
+            console.error('Home page error:', error.message);
+            return { error: `Failed to fetch home page: ${error.message}` };
         }
     }
 
     async search(q) {
         if (!q) return { error: 'Query is required' };
+        
         try {
-            let { data } = await axios.get(new URL(`/?s=${q}`, this.baseUrl).toString(), { headers: this.headers });
+            console.log(`Searching for: ${q}`);
+            const searchUrl = `${this.baseUrl}?s=${encodeURIComponent(q)}`;
+            const { data } = await axios.get(searchUrl, { 
+                headers: this.headers,
+                timeout: 10000 
+            });
+            
             const $ = cheerio.load(data);
             let result = [];
-            $('.icon').remove();
+            
             $('.as-anime-grid a').each((i, el) => {
-                result.push({
-                    title: $(el).find('.as-anime-title').text().trim(),
-                    img: $(el).find('img').attr('src'),
-                    rating: $(el).find('.as-rating').text().trim(),
-                    type: $(el).find('.as-type').text().trim(),
-                    season: $(el).find('.as-season').text().trim(),
-                    sypnosis: $(el).find('.as-synopsis').text().trim(),
-                    genre: [],
-                    url: $(el).attr('href')
-                });
-                $(el).find('.as-genres span').each((j, el2) => {
-                    result[i].genre.push($(el2).text().trim());
-                });
+                try {
+                    const title = $(el).find('.as-anime-title').text().trim();
+                    const img = $(el).find('img').attr('src');
+                    const rating = $(el).find('.as-rating').text().trim();
+                    const type = $(el).find('.as-type').text().trim();
+                    const season = $(el).find('.as-season').text().trim();
+                    const sypnosis = $(el).find('.as-synopsis').text().trim();
+                    const url = $(el).attr('href');
+                    
+                    if (title && url) {
+                        const anime = {
+                            title,
+                            img: img ? (img.startsWith('http') ? img : this.baseUrl + img) : null,
+                            rating: rating || 'N/A',
+                            type: type || 'Unknown',
+                            season: season || 'Unknown',
+                            sypnosis: sypnosis || 'No synopsis available',
+                            genre: [],
+                            url
+                        };
+                        
+                        $(el).find('.as-genres span').each((j, el2) => {
+                            const genre = $(el2).text().trim();
+                            if (genre) anime.genre.push(genre);
+                        });
+                        
+                        result.push(anime);
+                    }
+                } catch (e) {
+                    console.log('Error parsing search result:', e.message);
+                }
             });
-            return result;
+            
+            return result.length > 0 ? result : { error: `No results found for "${q}"` };
         } catch (error) {
-            return { error: error.message };
+            console.error('Search error:', error.message);
+            return { error: `Search failed: ${error.message}` };
         }
     }
 
     async detail(url) {
+        if (!url) return { error: 'URL is required' };
+        
         try {
-            let { data } = await axios.get(url, { headers: this.headers });
+            console.log(`Fetching detail for: ${url}`);
+            const { data } = await axios.get(url, { 
+                headers: this.headers,
+                timeout: 10000 
+            });
+            
             const $ = cheerio.load(data);
             let result = {
-                title: $('.anime-card__sidebar img').attr('alt'),
+                title: $('.anime-card__sidebar img').attr('alt') || $('h1').text().trim(),
                 img: $('.anime-card__sidebar img').attr('src'),
-                synopsis: $('.synopsis-prose').text().trim(),
+                synopsis: $('.synopsis-prose').text().trim() || 'No synopsis available',
                 detail: {},
                 genre: [],
                 episodes: []
             };
-            $('.detail-separator').remove();
+            
+            // Parse details
             $('.details-list li').each((i, el) => {
-                let key = $(el).find('.detail-label').text().replace(':', '').toLowerCase().replace(/\s/g, '_');
-                $(el).find('.detail-label').remove();
-                let value = $(el).text().trim();
-                result.detail[key] = value;
+                try {
+                    const label = $(el).find('.detail-label').text().replace(':', '').trim();
+                    $(el).find('.detail-label').remove();
+                    const value = $(el).text().trim();
+                    
+                    if (label && value) {
+                        const key = label.toLowerCase().replace(/\s/g, '_');
+                        result.detail[key] = value;
+                    }
+                } catch (e) {
+                    console.log('Error parsing detail item:', e.message);
+                }
             });
+            
+            // Parse genres
             $('.anime-card__genres a').each((i, el) => {
-                result.genre.push($(el).text().trim());
+                const genre = $(el).text().trim();
+                if (genre) result.genre.push(genre);
             });
+            
+            // Parse episodes
             $('.episode-list-items a').each((i, el) => {
-                result.episodes.push({
-                    eps: $(el).find('.ep-title').text().trim(),
-                    date: $(el).find('.ep-date').text().trim(),
-                    url: $(el).attr('href')
-                });
+                try {
+                    const eps = $(el).find('.ep-title').text().trim();
+                    const date = $(el).find('.ep-date').text().trim();
+                    const episodeUrl = $(el).attr('href');
+                    
+                    if (eps && episodeUrl) {
+                        result.episodes.push({
+                            eps,
+                            date: date || 'Unknown',
+                            url: episodeUrl
+                        });
+                    }
+                } catch (e) {
+                    console.log('Error parsing episode:', e.message);
+                }
             });
+            
             return result;
         } catch (error) {
-            return { error: error.message };
+            console.error('Detail error:', error.message);
+            return { error: `Failed to fetch detail: ${error.message}` };
         }
     }
 
     async download(url) {
+        if (!url) return { error: 'URL is required' };
+        
         try {
-            let { data: page } = await axios.get(url, { headers: this.headers });
+            console.log(`Fetching download links for: ${url}`);
+            const { data: page } = await axios.get(url, { 
+                headers: this.headers,
+                timeout: 10000 
+            });
+            
             const $ = cheerio.load(page);
             let lokal = null;
             let alternative = [];
+            
+            // Find download links
             $('.listlink a').each((i, el) => {
-                if ($(el).text().toLowerCase().includes('lokal')) {
-                    lokal = $(el).attr('href');
-                } else {
-                    alternative.push({
-                        server: $(el).text().trim(),
-                        url: $(el).attr('href')
-                    });
+                const server = $(el).text().trim();
+                const serverUrl = $(el).attr('href');
+                
+                if (server && serverUrl) {
+                    if (server.toLowerCase().includes('lokal')) {
+                        lokal = serverUrl;
+                    } else {
+                        alternative.push({
+                            server,
+                            url: serverUrl
+                        });
+                    }
                 }
             });
-            return {
-                title: $('h1.entry-title').text().trim(),
-                date: $('.bottomtitle time').text().trim(),
-                download: lokal ? await this.initDownload(lokal) : 'No lokal server found',
+            
+            const result = {
+                title: $('h1.entry-title').text().trim() || 'Unknown',
+                date: $('.bottomtitle time').text().trim() || 'Unknown',
                 alternative
             };
+            
+            // Try to get download links if lokal server found
+            if (lokal) {
+                try {
+                    result.download = await this.initDownload(lokal);
+                } catch (downloadError) {
+                    result.download = { error: `Download failed: ${downloadError.message}` };
+                }
+            } else {
+                result.download = 'No lokal server found';
+            }
+            
+            return result;
         } catch (error) {
-            return { error: error.message };
+            console.error('Download error:', error.message);
+            return { error: `Failed to fetch download links: ${error.message}` };
         }
     }
 
     async initDownload(url) {
         try {
-            let { data: token } = await axios.post(`https://s2.kotakanimeid.link/video/get-token.php`, { url }, {
-                headers: {
-                    'content-type': 'application/json',
-                    'origin': this.baseUrl,
-                    'referer': url,
-                    'x-fingerprint': 'dummy-fingerprint',
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+            console.log('Initializing download...');
+            
+            // Get token first
+            const { data: token } = await axios.post(
+                'https://s2.kotakanimeid.link/video/get-token.php',
+                { url },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': this.baseUrl,
+                        'Referer': url,
+                        'User-Agent': this.headers['User-Agent']
+                    },
+                    timeout: 10000
                 }
+            );
+            
+            // Get the download page
+            const { data: html } = await axios.get(url, { 
+                headers: this.headers,
+                timeout: 10000 
             });
-            let { data: html } = await axios.get(url, { headers: this.headers });
+            
             const $ = cheerio.load(html);
-            const script = $('script').html();
-            const matchEncryptedParam = script.match(/const ENCRYPTED_PARAM = "(.*)";/);
-            const matchTitleParam = script.match(/const TITLE_PARAM = "(.*)";/);
-            const encryptedParam = matchEncryptedParam[1];
-            const titleParam = matchTitleParam[1];
+            const scriptContent = $('script').html() || '';
+            
+            // Extract encrypted parameters
+            const encryptedMatch = scriptContent.match(/const ENCRYPTED_PARAM = "(.*)";/);
+            const titleMatch = scriptContent.match(/const TITLE_PARAM = "(.*)";/);
+            
+            if (!encryptedMatch) {
+                throw new Error('Could not find encrypted parameters');
+            }
+            
+            const encryptedParam = encryptedMatch[1];
+            const titleParam = titleMatch ? titleMatch[1] : '';
+            
+            // Build request URL
             const requestUrl = new URL('/video/get-download.php', 'https://s2.kotakanimeid.link');
             requestUrl.searchParams.set('mode', 'lokal');
             requestUrl.searchParams.set('vid', encodeURIComponent(encryptedParam));
             if (titleParam) requestUrl.searchParams.set('title', encodeURIComponent(titleParam));
             requestUrl.searchParams.set('dl', 'yes');
             requestUrl.searchParams.set('json', 'true');
-            let { data } = await axios.post(requestUrl.toString(), {
-                challenge: token.challenge,
-                url: requestUrl.toString(),
-            }, {
-                headers: {
-                    'content-type': 'application/json',
-                    'origin': this.baseUrl,
-                    'referer': url,
-                    'x-fingerprint': 'dummy-fingerprint',
-                    'x-challenge': token.challenge,
-                    'x-security-token': token.token,
-                    'x-timestamp': token.timestamp,
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
+            
+            // Get download links
+            const { data } = await axios.post(
+                requestUrl.toString(),
+                {
+                    challenge: token.challenge,
+                    url: requestUrl.toString(),
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': this.baseUrl,
+                        'Referer': url,
+                        'X-Challenge': token.challenge,
+                        'X-Security-Token': token.token,
+                        'X-Timestamp': token.timestamp,
+                        'User-Agent': this.headers['User-Agent']
+                    },
+                    timeout: 15000
                 }
-            });
-            let result = [];
-            for (const [quality, items] of Object.entries(data.links)) {
-                result.push({
-                    quality,
-                    url: 'https://s2.kotakanimeid.link' + items[0].url
-                });
-            }
-            // Get final download URLs
-            for (let i = 0; i < result.length; i++) {
-                try {
-                    let res = await axios.get(result[i].url, {
-                        headers: {
-                            ...this.headers,
-                            referer: result[i].url
-                        },
-                        maxRedirects: 0,
-                        validateStatus: function (status) {
-                            return status >= 200 && status < 400;
-                        }
-                    });
-                    if (res.headers.location) {
-                        result[i].url = res.headers.location;
+            );
+            
+            const result = [];
+            
+            // Parse download links
+            if (data.links && typeof data.links === 'object') {
+                for (const [quality, items] of Object.entries(data.links)) {
+                    if (Array.isArray(items) && items.length > 0 && items[0].url) {
+                        result.push({
+                            quality: quality || 'Unknown',
+                            url: 'https://s2.kotakanimeid.link' + items[0].url
+                        });
                     }
-                } catch (error) {
-                    console.log(`Failed to get final URL for ${result[i].quality}:`, error.message);
                 }
             }
-            return result;
+            
+            return result.length > 0 ? result : { error: 'No download links found' };
         } catch (error) {
-            return { error: error.message };
+            console.error('Download init error:', error.message);
+            throw new Error(`Download initialization failed: ${error.message}`);
         }
     }
 }
@@ -204,8 +330,15 @@ export default async function handler(req, res) {
 
     try {
         const { action, query, url } = req.query;
-        const scraper = new NontonAnimeID();
+        
+        if (!action) {
+            return res.status(400).json({
+                status: false,
+                message: 'Action parameter is required. Available actions: home, search, detail, download'
+            });
+        }
 
+        const scraper = new NontonAnimeID();
         let result;
 
         switch (action) {
@@ -217,7 +350,7 @@ export default async function handler(req, res) {
                 if (!query) {
                     return res.status(400).json({
                         status: false,
-                        message: 'Query parameter is required for search'
+                        message: 'Query parameter is required for search action'
                     });
                 }
                 result = await scraper.search(query);
@@ -227,7 +360,7 @@ export default async function handler(req, res) {
                 if (!url) {
                     return res.status(400).json({
                         status: false,
-                        message: 'URL parameter is required for detail'
+                        message: 'URL parameter is required for detail action'
                     });
                 }
                 result = await scraper.detail(url);
@@ -237,7 +370,7 @@ export default async function handler(req, res) {
                 if (!url) {
                     return res.status(400).json({
                         status: false,
-                        message: 'URL parameter is required for download'
+                        message: 'URL parameter is required for download action'
                     });
                 }
                 result = await scraper.download(url);
@@ -250,10 +383,12 @@ export default async function handler(req, res) {
                 });
         }
 
-        if (result.error) {
+        // Check if result contains error
+        if (result && result.error) {
             return res.status(500).json({
                 status: false,
-                message: result.error
+                message: result.error,
+                timestamp: new Date().toISOString()
             });
         }
 
@@ -264,10 +399,11 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('API Handler Error:', error);
         return res.status(500).json({
             status: false,
-            message: error.message || 'Internal server error'
+            message: error.message || 'Internal server error',
+            timestamp: new Date().toISOString()
         });
     }
-              }
+                        }
