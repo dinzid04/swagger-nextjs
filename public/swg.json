@@ -391,6 +391,7 @@
         }
       }
     },
+    
     "/api/openai/gpt4-pro": {
       "get": {
         "summary": "GPT-4 Pro",
@@ -1002,6 +1003,79 @@
     }
   },
     
+  "/api/anime/indo": {
+    "get": {
+      "summary": "Anime Indo Scraper",
+      "description": "Scrape anime data from anime-indo.lol",
+      "tags": ["Anime"],
+      "parameters": [
+        {
+          "name": "action",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": ["home", "genre", "movie", "jadwal", "search", "detail"]
+          },
+          "description": "Action to perform",
+          "example": "home"
+        },
+        {
+          "name": "query",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Search query (required for search action)",
+          "example": "one piece"
+        },
+        {
+          "name": "genre",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Genre name (for genre action)",
+          "example": "action"
+        },
+        {
+          "name": "url",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "format": "url"
+          },
+          "description": "Anime URL (required for detail action)",
+          "example": "https://anime-indo.lol/anime/one-piece/"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
   "/api/anime/nontonanime": {
     "get": {
       "summary": "NontonAnimeID Scraper",
