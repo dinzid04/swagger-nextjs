@@ -436,6 +436,84 @@
       }
     },
     
+  "/api/anime/mal": {
+    "get": {
+      "summary": "MyAnimeList API",
+      "description": "Various MyAnimeList data including top anime, seasonal anime, search, and details",
+      "tags": ["Anime"],
+      "parameters": [
+        {
+          "name": "action",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "top-anime",
+              "seasonal-anime", 
+              "search-anime",
+              "search-manga",
+              "search-character",
+              "anime-detail",
+              "manga-detail",
+              "character-detail"
+            ]
+          },
+          "description": "Action to perform"
+        },
+        {
+          "name": "season",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["fall", "spring", "winter", "summer"]
+          },
+          "description": "Season for seasonal-anime (required when action=seasonal-anime)"
+        },
+        {
+          "name": "type",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["tv-new", "tv-continuing", "ona", "ova", "movie", "special"]
+          },
+          "description": "Type for seasonal-anime (required when action=seasonal-anime)"
+        },
+        {
+          "name": "query",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Search query (required for search actions)"
+        },
+        {
+          "name": "url",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string"
+          },
+          "description": "URL for detail actions (required for detail actions)"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success"
+        },
+        "400": {
+          "description": "Bad Request"
+        },
+        "500": {
+          "description": "Internal Server Error"
+        }
+      }
+    }
+  },
+  
   "/api/iloveimg/upscale": {
     "get": {
       "summary": "Upscale Image from URL",
