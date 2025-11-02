@@ -703,6 +703,174 @@
     }
   },
   
+  "/api/payment/qris": {
+    "get": {
+      "summary": "QRIS Generator Information",
+      "description": "Get information about QRIS generator API",
+      "tags": ["Payment"],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "QRIS Generator API"
+                  },
+                  "usage": {
+                    "type": "object",
+                    "properties": {
+                      "post": {
+                        "type": "string",
+                        "example": "Generate QRIS dan upload ke CDN"
+                      },
+                      "parameters": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "string",
+                            "example": "Amount in string (required)"
+                          },
+                          "qris_statis": {
+                            "type": "string", 
+                            "example": "QRIS static data (required)"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "Generate QRIS",
+      "description": "Generate QRIS code and upload to CDN",
+      "tags": ["Payment"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "Amount in string format",
+                  "example": "10000"
+                },
+                "qris_statis": {
+                  "type": "string",
+                  "description": "QRIS static data string",
+                  "example": "XXXE3353COM.GO-JEK.WWWVDXXX44553463.CO.QRIS.WWXXXX4664XX.MERCHANT ENTE, XX65646XXXXTY5YY"
+                }
+              },
+              "required": ["amount", "qris_statis"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "QRIS generated and uploaded successfully"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "qris_url": {
+                        "type": "string",
+                        "example": "https://tmpfiles.org/123456/qris_image.jpg"
+                      },
+                      "amount": {
+                        "type": "string",
+                        "example": "10000"
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "status": true,
+                "message": "QRIS generated and uploaded successfully",
+                "data": {
+                  "qris_url": "https://tmpfiles.org/123456/qris_image.jpg",
+                  "amount": "10000",
+                  "timestamp": "2024-01-01T00:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Parameters amount and qris_statis are required"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "Internal Server Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Failed to generate QRIS"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "/api/iloveimg/upscale": {
     "get": {
       "summary": "Upscale Image from URL",
