@@ -1,6 +1,7 @@
 import axios from 'axios';
 import formidable from 'formidable';
 import fs from 'fs';
+import FormData from 'form-data';
 
 export const config = {
   api: {
@@ -66,10 +67,13 @@ export default async function handler(req, res) {
 
       console.log('Uploading to DinzID CDN...');
 
-      // Upload ke DinzID CDN
+      // Upload ke DinzID CDN menggunakan form-data package
       const formData = new FormData();
       const fileStream = fs.createReadStream(filePath);
-      formData.append('file', fileStream);
+      
+      // Gunakan nama file asli atau generate nama
+      const filename = file.originalFilename || `file_${Date.now()}`;
+      formData.append('file', fileStream, filename);
 
       const response = await axios.post('https://cdn.dinzid.biz.id/upload', formData, {
         headers: {
@@ -90,7 +94,7 @@ export default async function handler(req, res) {
           message: 'File uploaded successfully to DinzID CDN',
           data: {
             url: response.data.url,
-            filename: file.originalFilename,
+            filename: filename,
             size: file.size,
             timestamp: new Date().toISOString()
           }
@@ -109,7 +113,7 @@ export default async function handler(req, res) {
       
       let errorMessage = error.message;
       if (error.response) {
-        errorMessage = `DinzID CDN Error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`;
+        errorMessage = `DinzID CDN Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`;
       } else if (error.request) {
         errorMessage = 'Cannot connect to DinzID CDN';
       }
