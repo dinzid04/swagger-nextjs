@@ -66,7 +66,7 @@ async function processGPT4o(text, systemPrompt, imageUrl = null, sessionId = 'ne
       imageUrl: encodeURIComponent(imageUrl),
       sessionId: encodeURIComponent(sessionId)
     };
-    apiUrl = `https://api.nekolabs.my.id/ai/gpt/4o?text=${params.text}&systemPrompt=${params.systemPrompt}&imageUrl=${params.imageUrl}&sessionId=${params.sessionId}`;
+    apiUrl = `https://api.nekolabs.web.id/ai/gemini/2.5-flash/v2?text=${params.text}&systemPrompt=${params.systemPrompt}&imageUrl=${params.imageUrl}&sessionId=${params.sessionId}`;
   } else {
     // Tanpa image (hanya text)
     const params = {
@@ -74,7 +74,7 @@ async function processGPT4o(text, systemPrompt, imageUrl = null, sessionId = 'ne
       systemPrompt: encodeURIComponent(systemPrompt),
       sessionId: encodeURIComponent(sessionId)
     };
-    apiUrl = `https://api.nekolabs.my.id/ai/gpt/4o?text=${params.text}&systemPrompt=${params.systemPrompt}&sessionId=${params.sessionId}`;
+    apiUrl = `https://api.nekolabs.web.id/ai/gemini/2.5-flash/v2?text=${params.text}&systemPrompt=${params.systemPrompt}&sessionId=${params.sessionId}`;
   }
 
   console.log('Calling GPT-4o API:', apiUrl);
