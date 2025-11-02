@@ -436,6 +436,195 @@
       }
     },
     
+  "/api/cdn/dinzid": {
+    "get": {
+      "summary": "DinzID CDN Information",
+      "description": "Get information about DinzID CDN upload service",
+      "tags": ["CDN Services"],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "DinzID CDN Upload API"
+                  },
+                  "usage": {
+                    "type": "object",
+                    "properties": {
+                      "post": {
+                        "type": "string",
+                        "example": "Upload file menggunakan multipart/form-data"
+                      },
+                      "field_name": {
+                        "type": "string",
+                        "example": "file"
+                      },
+                      "max_file_size": {
+                        "type": "string",
+                        "example": "50MB"
+                      },
+                      "supported_types": {
+                        "type": "string",
+                        "example": "All file types"
+                      }
+                    }
+                  },
+                  "example": {
+                    "type": "object",
+                    "properties": {
+                      "curl": {
+                        "type": "string",
+                        "example": "curl -X POST \"https://your-domain.com/api/cdn/dinzid\" -F \"file=@/path/to/file.jpg\""
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "status": true,
+                "message": "DinzID CDN Upload API",
+                "usage": {
+                  "post": "Upload file menggunakan multipart/form-data",
+                  "field_name": "file",
+                  "max_file_size": "50MB",
+                  "supported_types": "All file types"
+                },
+                "example": {
+                  "curl": "curl -X POST \"https://your-domain.com/api/cdn/dinzid\" -F \"file=@/path/to/file.jpg\""
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "Upload File to DinzID CDN",
+      "description": "Upload file to DinzID CDN and get public URL",
+      "tags": ["CDN Services"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "File to upload (max 50MB)"
+                }
+              },
+              "required": ["file"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "File uploaded successfully to DinzID CDN"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "example": "https://cdn.dinzid.biz.id/Fzgm.jpg"
+                      },
+                      "filename": {
+                        "type": "string",
+                        "example": "image.jpg"
+                      },
+                      "size": {
+                        "type": "number",
+                        "example": 1024000
+                      },
+                      "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00.000Z"
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "status": true,
+                "message": "File uploaded successfully to DinzID CDN",
+                "data": {
+                  "url": "https://cdn.dinzid.biz.id/Fzgm.jpg",
+                  "filename": "image.jpg",
+                  "size": 1024000,
+                  "timestamp": "2024-01-01T00:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "File is required"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "500": {
+          "description": "Internal Server Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": false
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Cannot connect to DinzID CDN"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "/api/anime/mal": {
     "get": {
       "summary": "MyAnimeList API",
