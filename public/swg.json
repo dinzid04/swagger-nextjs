@@ -174,223 +174,179 @@
       }
     }
   },
-    "/api/ai/nano-banana": {
-      "get": {
-        "summary": "Nano Banana AI Image Editor",
-        "description": "Edit gambar menggunakan AI Nano Banana dengan URL gambar eksternal",
-        "tags": [
-          "AI Image Editor"
-        ],
-        "parameters": [
-          {
-            "name": "prompt",
-            "in": "query",
-            "description": "Prompt untuk edit gambar (contoh: Change the color of black)",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Change the color of black"
-            }
-          },
-          {
-            "name": "imageUrl",
-            "in": "query",
-            "description": "URL gambar eksternal yang akan di-edit",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "https://raw.githubusercontent.com/DinzID/nyoba/main/images/image_1757710705910_92221b.jpg"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "result": {
-                      "type": "string",
-                      "example": "https://tmpfiles.org/dl/2336137/1759017881196.jpg"
-                    }
-                  }
-                },
-                "example": {
-                  "status": true,
-                  "result": "https://tmpfiles.org/dl/2336137/1759017881196.jpg"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Parameter tidak lengkap",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "boolean",
-                      "example": false
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Parameter prompt dan imageUrl diperlukan"
-                    }
-                  }
-                },
-                "example": {
-                  "status": false,
-                  "message": "Parameter prompt dan imageUrl diperlukan"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "boolean",
-                      "example": false
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Gagal memproses gambar"
-                    }
-                  }
-                },
-                "example": {
-                  "status": false,
-                  "message": "Gagal memproses gambar"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Nano Banana AI Image Editor dengan Upload File",
-        "description": "Edit gambar menggunakan AI Nano Banana dengan upload file langsung",
-        "tags": [
-          "AI Image Editor"
-        ],
-        "requestBody": {
+ 
+  "/api/ai/nano-banana": {
+    "get": {
+      "summary": "Nano Banana AI Image Editor",
+      "description": "Edit image using Nano Banana AI with image URL",
+      "tags": ["AI Image Editor"],
+      "parameters": [
+        {
+          "name": "prompt",
+          "in": "query",
           "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Edit prompt for the image",
+          "example": "Change the color of black"
+        },
+        {
+          "name": "imageUrl",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "url"
+          },
+          "description": "Image URL to edit",
+          "example": "https://example.com/image.jpg"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "prompt": {
-                    "type": "string",
-                    "description": "Prompt untuk edit gambar",
-                    "example": "Change the color of black"
+                  "status": {
+                    "type": "boolean",
+                    "example": true
                   },
-                  "image": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "File gambar (jpg, png, jpeg)"
-                  }
-                },
-                "required": [
-                  "prompt",
-                  "image"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "result": {
-                      "type": "string",
-                      "example": "https://tmpfiles.org/dl/2336137/1759017881196.jpg"
-                    },
-                    "originalUpload": {
-                      "type": "string",
-                      "example": "https://tmpfiles.org/2336137/uploaded_image.jpg"
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "result": {
+                        "type": "string",
+                        "example": "https://example.com/edited-image.png"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      },
+                      "responseTime": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "images": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string",
+                        "example": "https://example.com/edited-image.png"
+                      },
+                      "base64": {
+                        "type": "string",
+                        "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+                      }
                     }
                   }
-                },
-                "example": {
-                  "status": true,
-                  "result": "https://tmpfiles.org/dl/2336137/1759017881196.jpg",
-                  "originalUpload": "https://tmpfiles.org/2336137/uploaded_image.jpg"
                 }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request - Data tidak lengkap",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "boolean",
-                      "example": false
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Prompt dan file gambar diperlukan"
-                    }
-                  }
+              },
+              "example": {
+                "status": true,
+                "data": {
+                  "success": true,
+                  "result": "https://napkinsdev.s3.us-east-1.amazonaws.com/next-s3-uploads/7550490a-f216-4a36-8dcc-f49397200118/1762174674042.png",
+                  "timestamp": "2025-11-03T12:57:54.279Z",
+                  "responseTime": "8012ms"
                 },
-                "example": {
-                  "status": false,
-                  "message": "Prompt dan file gambar diperlukan"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "boolean",
-                      "example": false
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Gagal memproses gambar"
-                    }
-                  }
+                "images": {
+                  "url": "https://napkinsdev.s3.us-east-1.amazonaws.com/next-s3-uploads/7550490a-f216-4a36-8dcc-f49397200118/1762174674042.png",
+                  "base64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
                 },
-                "example": {
-                  "status": false,
-                  "message": "Gagal memproses gambar"
-                }
+                "timestamp": "2024-01-01T00:00:00.000Z"
               }
             }
           }
         }
       }
     },
+    "post": {
+      "summary": "Nano Banana AI Image Editor with Upload",
+      "description": "Upload image and edit using Nano Banana AI",
+      "tags": ["AI Image Editor"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "prompt": {
+                  "type": "string",
+                  "description": "Edit prompt for the image",
+                  "example": "Change the color of black"
+                },
+                "image": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "Image file to upload and edit"
+                }
+              },
+              "required": ["prompt", "image"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object"
+                  },
+                  "uploadInfo": {
+                    "type": "object",
+                    "properties": {
+                      "originalImage": {
+                        "type": "object",
+                        "properties": {
+                          "cdnUrl": {
+                            "type": "string",
+                            "example": "https://uguu.se/abc123.jpg"
+                          },
+                          "provider": {
+                            "type": "string",
+                            "example": "uguu.se"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "images": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "base64": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
     
     "/api/openai/gpt4-pro": {
       "get": {
