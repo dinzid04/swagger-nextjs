@@ -47,7 +47,7 @@ async function processNanoBanana(imageUrl, prompt) {
   const encodedImageUrl = encodeURIComponent(imageUrl);
   const encodedPrompt = encodeURIComponent(prompt);
   
-  const apiUrl = `https://api.nekolabs.my.id/ai/gemini/nano-banana?prompt=${encodedPrompt}&imageUrl=${encodedImageUrl}`;
+  const apiUrl = `https://api.nekolabs.web.id/ai/gemini/nano-banana?prompt=${encodedPrompt}&imageUrl=${encodedImageUrl}`;
 
   const response = await axios.get(apiUrl, {
     timeout: 60000
