@@ -103,6 +103,8 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  let files; // Deklarasi files di scope handler
+
   try {
     // GET method - dengan imageUrl langsung
     if (req.method === 'GET') {
@@ -140,12 +142,14 @@ export default async function handler(req, res) {
         maxFileSize: 10 * 1024 * 1024, // 10MB
       });
 
-      const [fields, files] = await new Promise((resolve, reject) => {
+      const [fields, parsedFiles] = await new Promise((resolve, reject) => {
         form.parse(req, (err, fields, files) => {
           if (err) reject(err);
           resolve([fields, files]);
         });
       });
+
+      files = parsedFiles; // Assign ke variabel files di scope handler
 
       const prompt = fields.prompt?.[0] || fields.prompt;
       const imageFile = files.image?.[0] || files.image;
@@ -167,6 +171,10 @@ export default async function handler(req, res) {
       // Validasi file type
       const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedMimes.includes(imageFile.mimetype)) {
+        // Clean up file temporary
+        if (fs.existsSync(imageFile.filepath)) {
+          fs.unlinkSync(imageFile.filepath);
+        }
         return res.status(400).json({
           status: false,
           message: `Invalid file type: ${imageFile.mimetype}. Supported: JPG, JPEG, PNG, GIF, WEBP`
@@ -182,7 +190,9 @@ export default async function handler(req, res) {
       const cdnResult = await uploadToCDN(fileBuffer, filename);
       
       // Clean up temporary file
-      fs.unlinkSync(imageFile.filepath);
+      if (fs.existsSync(imageFile.filepath)) {
+        fs.unlinkSync(imageFile.filepath);
+      }
 
       console.log('Image uploaded to CDN:', cdnResult.url);
       console.log('Processing with Nano Banana...');
@@ -215,11 +225,19 @@ export default async function handler(req, res) {
     console.error('API Error:', error);
     
     // Clean up jika ada file temporary
-    if (req.method === 'POST' && files?.image) {
+    if (req.method === 'POST' && files) {
       const imageFile = files.image?.[0] || files.image;
       if (imageFile?.filepath && fs.existsSync(imageFile.filepath)) {
         fs.unlinkSync(imageFile.filepath);
       }
+    }
+
+    // Handle specific errors dari Nano Banana API
+    if (error.response && error.response.status === 500) {
+      return res.status(500).json({
+        status: false,
+        message: 'Nano Banana API is currently unavailable. Please try again later.'
+      });
     }
 
     return res.status(500).json({
@@ -232,4 +250,4 @@ export default async function handler(req, res) {
     status: false,
     message: 'Method not allowed'
   });
-        }
+}
