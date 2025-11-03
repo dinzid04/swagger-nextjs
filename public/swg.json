@@ -1715,6 +1715,141 @@
       }
     }
   },
+
+
+  "/api/search/pinterest": {
+    "get": {
+      "summary": "Pinterest Search with Base64",
+      "description": "Search Pinterest images and convert to base64",
+      "tags": ["Search"],
+      "parameters": [
+        {
+          "name": "q",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Search query",
+          "example": "hutao"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "query": {
+                        "type": "string",
+                        "example": "hutao"
+                      },
+                      "totalResults": {
+                        "type": "number",
+                        "example": 16
+                      },
+                      "processedWithBase64": {
+                        "type": "number",
+                        "example": 5
+                      },
+                      "results": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "caption": {
+                              "type": "string",
+                              "example": "Hu Tao | Genshin Impact"
+                            },
+                            "imageUrl": {
+                              "type": "string",
+                              "example": "https://i.pinimg.com/originals/78/5c/d7/785cd794a381c1541df1a1ef0638f48a.jpg"
+                            },
+                            "base64": {
+                              "type": "string",
+                              "example": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCA..."
+                            },
+                            "hasBase64": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "author": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "example": "CatEsther2355"
+                                },
+                                "fullname": {
+                                  "type": "string",
+                                  "example": "Camila"
+                                },
+                                "followers": {
+                                  "type": "number",
+                                  "example": 6
+                                }
+                              }
+                            },
+                            "url": {
+                              "type": "string",
+                              "example": "https://id.pinterest.com/pin/71565081579495131"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "Pinterest Search with Base64 (POST)",
+      "description": "Search Pinterest images and convert to base64 using POST",
+      "tags": ["Search"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "q": {
+                  "type": "string",
+                  "description": "Search query",
+                  "example": "hutao"
+                }
+              },
+              "required": ["q"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success"
+        }
+      }
+    }
+  },
+
+    
   "/api/ngl/spam": {
     "get": {
       "summary": "NGL Spam Tools",
