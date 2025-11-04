@@ -1,4 +1,4 @@
-{
+ {
   "openapi": "3.0.0",
   "info": {
     "version": "nextjs",
@@ -175,6 +175,7 @@
     }
   },
  
+  
   "/api/tools/what-music": {
     "get": {
       "summary": "Music Recognition (Shazam-like)",
@@ -195,161 +196,32 @@
       ],
       "responses": {
         "200": {
-          "description": "Success",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "boolean",
-                    "example": true
-                  },
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "result": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "title": {
-                              "type": "string",
-                              "example": "Be Alright"
-                            },
-                            "artists": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              },
-                              "example": ["Dean Lewis"]
-                            },
-                            "score": {
-                              "type": "number",
-                              "example": 100
-                            },
-                            "release": {
-                              "type": "string",
-                              "example": "29/6/2018"
-                            },
-                            "duration": {
-                              "type": "string",
-                              "example": "03:16"
-                            },
-                            "url": {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              },
-                              "example": [
-                                "",
-                                "https://www.deezer.com/us/track/518485472",
-                                "https://open.spotify.com/track/42BSGwk6e6SY1Fem2aLnu3",
-                                "https://youtu.be/td8ofu69z0E"
-                              ]
-                            }
-                          }
-                        }
-                      },
-                      "timestamp": {
-                        "type": "string",
-                        "format": "date-time"
-                      },
-                      "responseTime": {
-                        "type": "string",
-                        "example": "2265ms"
-                      }
-                    }
-                  }
-                }
-              },
-              "example": {
-                "status": true,
-                "data": {
-                  "result": [
-                    {
-                      "title": "Be Alright",
-                      "artists": ["Dean Lewis"],
-                      "score": 100,
-                      "release": "29/6/2018",
-                      "duration": "03:16",
-                      "url": [
-                        "",
-                        "https://www.deezer.com/us/track/518485472",
-                        "https://open.spotify.com/track/42BSGwk6e6SY1Fem2aLnu3",
-                        "https://youtu.be/td8ofu69z0E"
-                      ]
-                    }
-                  ],
-                  "timestamp": "2025-11-04T04:18:57.396Z",
-                  "responseTime": "2265ms"
-                },
-                "timestamp": "2024-01-01T00:00:00.000Z"
-              }
-            }
-          }
-        },
-        "400": {
-          "description": "Bad Request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "boolean",
-                    "example": false
-                  },
-                  "message": {
-                    "type": "string",
-                    "example": "Parameter audioUrl is required"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "404": {
-          "description": "Music Not Found",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "status": {
-                    "type": "boolean",
-                    "example": false
-                  },
-                  "message": {
-                    "type": "string",
-                    "example": "Music not recognized. Please try with a different audio sample."
-                  }
-                }
-              }
-            }
-          }
+          "description": "Success"
         }
       }
     },
     "post": {
-      "summary": "Music Recognition (Shazam-like) - POST",
-      "description": "Identify music from audio URL using POST method",
+      "summary": "Music Recognition with File Upload",
+      "description": "Identify music by uploading audio file or providing URL",
       "tags": ["Tools"],
       "requestBody": {
         "required": true,
         "content": {
-          "application/json": {
+          "multipart/form-data": {
             "schema": {
               "type": "object",
               "properties": {
+                "audio": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "Audio file to upload (MP3, WAV, OGG, AAC, M4A)"
+                },
                 "audioUrl": {
                   "type": "string",
-                  "format": "url",
-                  "description": "Audio file URL to identify",
-                  "example": "https://cdn.dinzid.biz.id/d9KC.mp3"
+                  "description": "Audio URL (alternative to file upload)",
+                  "example": "https://example.com/audio.mp3"
                 }
-              },
-              "required": ["audioUrl"]
+              }
             }
           }
         }
@@ -368,6 +240,27 @@
                   },
                   "data": {
                     "type": "object"
+                  },
+                  "uploadInfo": {
+                    "type": "object",
+                    "properties": {
+                      "cdnUrl": {
+                        "type": "string",
+                        "example": "https://uguu.se/abc123.mp3"
+                      },
+                      "provider": {
+                        "type": "string",
+                        "example": "uguu.se"
+                      },
+                      "filename": {
+                        "type": "string",
+                        "example": "audio.mp3"
+                      },
+                      "method": {
+                        "type": "string",
+                        "example": "file_upload"
+                      }
+                    }
                   }
                 }
               }
@@ -2433,4 +2326,4 @@
       }
     }
   }
-}
+            }
