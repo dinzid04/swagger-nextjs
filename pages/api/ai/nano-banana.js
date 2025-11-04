@@ -53,8 +53,8 @@ async function uploadToCDN(fileBuffer, filename) {
   throw new Error('All CDN providers failed');
 }
 
-// Process Nano Banana request
-async function processNanoBanana(prompt, imageUrl) {
+// Process Nano Banana request - nekolabs
+async function processNanoBananaNeko(prompt, imageUrl) {
   const params = {
     prompt: encodeURIComponent(prompt),
     imageUrl: encodeURIComponent(imageUrl)
@@ -62,7 +62,7 @@ async function processNanoBanana(prompt, imageUrl) {
 
   const apiUrl = `https://api.nekolabs.web.id/ai/gemini/nano-banana?prompt=${params.prompt}&imageUrl=${params.imageUrl}`;
 
-  console.log('Calling Nano Banana API:', apiUrl);
+  console.log('Calling Nano Banana API (nekolabs):', apiUrl);
 
   const response = await axios.get(apiUrl, {
     timeout: 60000,
@@ -72,7 +72,35 @@ async function processNanoBanana(prompt, imageUrl) {
     }
   });
 
-  return response.data;
+  return {
+    ...response.data,
+    provider: 'nekolabs'
+  };
+}
+
+// Process Nano Banana request - zenzxz (fallback)
+async function processNanoBananaZenz(prompt, imageBuffer, filename) {
+  console.log('Calling Nano Banana API (zenzxz)...');
+
+  const formData = new FormData();
+  formData.append('image', imageBuffer, { filename });
+  formData.append('prompt', prompt);
+
+  const response = await axios.post('https://api.zenzxz.my.id/api/maker/imagedit', formData, {
+    headers: {
+      ...formData.getHeaders(),
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    },
+    timeout: 60000,
+    responseType: 'arraybuffer'
+  });
+
+  // zenzxz return image langsung, bukan JSON
+  return {
+    success: true,
+    result: response.data, // image buffer
+    provider: 'zenzxz'
+  };
 }
 
 // Convert image URL to base64
@@ -93,6 +121,41 @@ async function urlToBase64(imageUrl) {
   }
 }
 
+// Convert buffer to base64
+function bufferToBase64(buffer, mimeType = 'image/png') {
+  try {
+    const base64 = Buffer.from(buffer, 'binary').toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  } catch (error) {
+    console.error('Failed to convert buffer to base64:', error.message);
+    return null;
+  }
+}
+
+// Main processor dengan fallback
+async function processNanoBanana(prompt, imageUrl, imageBuffer = null, filename = null) {
+  // Coba nekolabs dulu
+  try {
+    console.log('Trying nekolabs API...');
+    const result = await processNanoBananaNeko(prompt, imageUrl);
+    return result;
+  } catch (error) {
+    console.log('Nekolabs failed, trying zenzxz...');
+    
+    // Fallback ke zenzxz jika ada image buffer (untuk POST)
+    if (imageBuffer && filename) {
+      try {
+        const result = await processNanoBananaZenz(prompt, imageBuffer, filename);
+        return result;
+      } catch (zenzError) {
+        throw new Error(`Both APIs failed: nekolabs - ${error.message}, zenzxz - ${zenzError.message}`);
+      }
+    } else {
+      throw new Error(`Nekolabs failed and no fallback available: ${error.message}`);
+    }
+  }
+}
+
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -103,7 +166,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  let files; // Deklarasi files di scope handler
+  let files;
 
   try {
     // GET method - dengan imageUrl langsung
@@ -120,16 +183,26 @@ export default async function handler(req, res) {
       console.log('Processing Nano Banana with URL image...');
       const result = await processNanoBanana(prompt, imageUrl);
 
-      // Convert result image to base64
-      const base64Result = await urlToBase64(result.result);
+      let imageUrlResult, base64Result;
+
+      if (result.provider === 'nekolabs') {
+        // nekolabs return URL
+        imageUrlResult = result.result;
+        base64Result = await urlToBase64(result.result);
+      } else {
+        // zenzxz return buffer (tidak mungkin di GET, tapi siapin aja)
+        imageUrlResult = null;
+        base64Result = bufferToBase64(result.result);
+      }
 
       return res.status(200).json({
         status: true,
         data: result,
         images: {
-          url: result.result,
+          url: imageUrlResult,
           base64: base64Result
         },
+        provider: result.provider,
         timestamp: new Date().toISOString()
       });
 
@@ -149,7 +222,7 @@ export default async function handler(req, res) {
         });
       });
 
-      files = parsedFiles; // Assign ke variabel files di scope handler
+      files = parsedFiles;
 
       const prompt = fields.prompt?.[0] || fields.prompt;
       const imageFile = files.image?.[0] || files.image;
@@ -171,7 +244,6 @@ export default async function handler(req, res) {
       // Validasi file type
       const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedMimes.includes(imageFile.mimetype)) {
-        // Clean up file temporary
         if (fs.existsSync(imageFile.filepath)) {
           fs.unlinkSync(imageFile.filepath);
         }
@@ -181,29 +253,37 @@ export default async function handler(req, res) {
         });
       }
 
-      console.log('Uploading image to CDN...');
+      console.log('Uploading image to CDN for nekolabs...');
       
       const fileBuffer = fs.readFileSync(imageFile.filepath);
       const filename = imageFile.originalFilename || `image_${uuidv4()}.jpg`;
       
-      // Upload ke CDN
+      // Upload ke CDN untuk nekolabs
       const cdnResult = await uploadToCDN(fileBuffer, filename);
-      
+
+      console.log('Processing with Nano Banana...');
+
+      // Process dengan fallback
+      const nanoResult = await processNanoBanana(prompt, cdnResult.url, fileBuffer, filename);
+
+      let imageUrlResult, base64Result;
+
+      if (nanoResult.provider === 'nekolabs') {
+        // nekolabs return URL
+        imageUrlResult = nanoResult.result;
+        base64Result = await urlToBase64(nanoResult.result);
+      } else {
+        // zenzxz return buffer langsung
+        imageUrlResult = null;
+        base64Result = bufferToBase64(nanoResult.result);
+      }
+
       // Clean up temporary file
       if (fs.existsSync(imageFile.filepath)) {
         fs.unlinkSync(imageFile.filepath);
       }
 
-      console.log('Image uploaded to CDN:', cdnResult.url);
-      console.log('Processing with Nano Banana...');
-
-      // Process dengan Nano Banana
-      const nanoResult = await processNanoBanana(prompt, cdnResult.url);
-
-      // Convert result image to base64
-      const base64Result = await urlToBase64(nanoResult.result);
-
-      return res.status(200).json({
+      const responseData = {
         status: true,
         data: nanoResult,
         uploadInfo: {
@@ -214,11 +294,14 @@ export default async function handler(req, res) {
           }
         },
         images: {
-          url: nanoResult.result,
+          url: imageUrlResult,
           base64: base64Result
         },
+        provider: nanoResult.provider,
         timestamp: new Date().toISOString()
-      });
+      };
+
+      return res.status(200).json(responseData);
     }
 
   } catch (error) {
@@ -230,14 +313,6 @@ export default async function handler(req, res) {
       if (imageFile?.filepath && fs.existsSync(imageFile.filepath)) {
         fs.unlinkSync(imageFile.filepath);
       }
-    }
-
-    // Handle specific errors dari Nano Banana API
-    if (error.response && error.response.status === 500) {
-      return res.status(500).json({
-        status: false,
-        message: 'Nano Banana API is currently unavailable. Please try again later.'
-      });
     }
 
     return res.status(500).json({
