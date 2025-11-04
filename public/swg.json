@@ -270,6 +270,168 @@
       }
     }
   },
+   
+  "/api/ai/animagine": {
+    "get": {
+      "summary": "Animagine XL 4.0 Image Generation",
+      "description": "Generate anime-style images using Animagine XL 4.0 model",
+      "tags": ["AI Image Generation"],
+      "parameters": [
+        {
+          "name": "prompt",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Generation prompt",
+          "example": "beautiful anime girl with blue hair"
+        },
+        {
+          "name": "ratio",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "default": "1:1",
+            "enum": ["1:1", "16:9", "9:16", "4:3", "3:4"]
+          },
+          "description": "Image aspect ratio",
+          "example": "1:1"
+        },
+        {
+          "name": "model",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "default": "animagine",
+            "enum": ["animagine", "nsfw"]
+          },
+          "description": "Model type (animagine or nsfw)",
+          "example": "animagine"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "result": {
+                        "type": "string",
+                        "example": "https://example.com/generated-image.png"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      },
+                      "responseTime": {
+                        "type": "string"
+                      },
+                      "model": {
+                        "type": "string",
+                        "example": "animagine-xl-4.0"
+                      }
+                    }
+                  },
+                  "images": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "base64": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "model": {
+                    "type": "string",
+                    "example": "animagine-xl-4.0"
+                  }
+                }
+              },
+              "example": {
+                "status": true,
+                "data": {
+                  "success": true,
+                  "result": "https://napkinsdev.s3.us-east-1.amazonaws.com/next-s3-uploads/87fb6e55-3293-41af-b080-eb653c36f2c9/1762283706947.png",
+                  "timestamp": "2025-11-04T19:15:07.272Z",
+                  "responseTime": "52016ms",
+                  "model": "animagine-xl-4.0"
+                },
+                "images": {
+                  "url": "https://napkinsdev.s3.us-east-1.amazonaws.com/next-s3-uploads/87fb6e55-3293-41af-b080-eb653c36f2c9/1762283706947.png",
+                  "base64": "data:image/png;base64,..."
+                },
+                "model": "animagine-xl-4.0",
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "Animagine XL 4.0 Image Generation (POST)",
+      "description": "Generate anime-style images using POST method",
+      "tags": ["AI Image Generation"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "prompt": {
+                  "type": "string",
+                  "description": "Generation prompt",
+                  "example": "beautiful anime girl with blue hair"
+                },
+                "ratio": {
+                  "type": "string",
+                  "description": "Image aspect ratio",
+                  "example": "1:1"
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Model type",
+                  "example": "animagine"
+                }
+              },
+              "required": ["prompt"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+   
   "/api/ai/nano-banana": {
     "get": {
       "summary": "Nano Banana AI Image Editor",
