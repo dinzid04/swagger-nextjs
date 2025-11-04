@@ -271,6 +271,174 @@
     }
   },
    
+  "/api/downloader/ytaudio": {
+    "get": {
+      "summary": "YouTube Audio Downloader",
+      "description": "Search and download audio from YouTube",
+      "tags": ["Downloader"],
+      "parameters": [
+        {
+          "name": "query",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Search query or song title",
+          "example": "505"
+        },
+        {
+          "name": "direct",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "boolean",
+            "default": false
+          },
+          "description": "Return audio stream directly for playback",
+          "example": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Audio found successfully"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "audio": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string",
+                            "example": "https://cdn403.savetube.vip/media/qU9mHegkTc4/505-128-ytshorts.savetube.me.mp3"
+                          },
+                          "directPlay": {
+                            "type": "string",
+                            "example": "http://localhost:3000/api/downloader/ytaudio?query=505&direct=true"
+                          },
+                          "quality": {
+                            "type": "string",
+                            "example": "128kbps"
+                          },
+                          "filename": {
+                            "type": "string",
+                            "example": "505 (128kbps).mp3"
+                          },
+                          "duration": {
+                            "type": "object",
+                            "properties": {
+                              "seconds": {
+                                "type": "number",
+                                "example": 254
+                              },
+                              "timestamp": {
+                                "type": "string",
+                                "example": "4:14"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "example": "505"
+                          },
+                          "artist": {
+                            "type": "string",
+                            "example": "Official Arctic Monkeys"
+                          },
+                          "thumbnail": {
+                            "type": "string",
+                            "example": "https://i.ytimg.com/vi/qU9mHegkTc4/hq720.jpg"
+                          },
+                          "duration": {
+                            "type": "string",
+                            "example": "4:14"
+                          },
+                          "views": {
+                            "type": "number",
+                            "example": 700370859
+                          },
+                          "youtubeUrl": {
+                            "type": "string",
+                            "example": "https://youtube.com/watch?v=qU9mHegkTc4"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "audio/mpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              },
+              "description": "Audio stream when direct=true"
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "YouTube Audio Downloader (POST)",
+      "description": "Search and download audio from YouTube using POST",
+      "tags": ["Downloader"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "query": {
+                  "type": "string",
+                  "description": "Search query or song title",
+                  "example": "505"
+                },
+                "direct": {
+                  "type": "boolean",
+                  "description": "Return audio stream directly for playback",
+                  "example": false
+                }
+              },
+              "required": ["query"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+          
   "/api/ai/animagine": {
     "get": {
       "summary": "Animagine XL 4.0 Image Generation",
