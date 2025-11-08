@@ -176,6 +176,192 @@
   },
  
   
+  "/api/ai/qwen-image": {
+    "get": {
+      "summary": "Qwen AI Image Generator",
+      "description": "Generate image using Qwen AI model",
+      "tags": ["AI Image Generator"],
+      "parameters": [
+        {
+          "name": "prompt",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Prompt for image generation",
+          "example": "gunung"
+        },
+        {
+          "name": "ratio",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["1:1", "16:9", "9:16"],
+            "default": "1:1"
+          },
+          "description": "Image aspect ratio",
+          "example": "1:1"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "result": {
+                        "type": "string",
+                        "example": "https://example.com/generated-image.webp"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      },
+                      "responseTime": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "images": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "base64": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "prompt": {
+                        "type": "string"
+                      },
+                      "ratio": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "Qwen AI Image Generator with Reference",
+      "description": "Generate image using Qwen AI with optional reference image",
+      "tags": ["AI Image Generator"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "prompt": {
+                  "type": "string",
+                  "description": "Prompt for image generation",
+                  "example": "gunung dengan style seperti ini"
+                },
+                "ratio": {
+                  "type": "string",
+                  "enum": ["1:1", "16:9", "9:16"],
+                  "default": "1:1",
+                  "description": "Image aspect ratio"
+                },
+                "image": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "Reference image (optional)"
+                }
+              },
+              "required": ["prompt"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object"
+                  },
+                  "uploadInfo": {
+                    "type": "object",
+                    "properties": {
+                      "referenceImage": {
+                        "type": "object",
+                        "properties": {
+                          "cdnUrl": {
+                            "type": "string"
+                          },
+                          "provider": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "images": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "base64": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "prompt": {
+                        "type": "string"
+                      },
+                      "ratio": {
+                        "type": "string"
+                      },
+                      "hasReferenceImage": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   "/api/tools/what-music": {
     "get": {
       "summary": "Music Recognition (Shazam-like)",
