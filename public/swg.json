@@ -543,7 +543,7 @@
         }
       }
     }
-  }
+  },
   "/api/downloader/ytaudio": {
     "get": {
       "summary": "YouTube Audio Downloader",
