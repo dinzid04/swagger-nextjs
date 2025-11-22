@@ -2413,7 +2413,6 @@
       }
     }
   },
-//kukuramani
   "/api/kuramanime/search": {
     "get": {
       "summary": "Search Anime",
@@ -3021,14 +3020,6 @@
 
 
 
-
-
-
-
-
-
-
-///
   "/api/search/pinterest": {
     "get": {
       "summary": "Pinterest Search with Base64",
