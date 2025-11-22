@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "version": "nextjs",
-    "title": "Shiina-Api's",
+    "title": "DinzID-Api's",
     "description": "Hello World",
     "contact": {
       "name": "Source Code",
@@ -2413,8 +2413,622 @@
       }
     }
   },
+//kukuramani
+  "/api/kuramanime/search": {
+    "get": {
+      "summary": "Search Anime",
+      "description": "Search anime by query with pagination and sorting",
+      "tags": ["Kuramanime"],
+      "parameters": [
+        {
+          "name": "query",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Search query",
+          "example": "bocchi"
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "default": 1
+          },
+          "description": "Page number"
+        },
+        {
+          "name": "order_by",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["ascending", "descending", "oldest", "latest", "popular", "most_viewed", "updated", "text"],
+            "default": "latest"
+          },
+          "description": "Sorting order"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "example": "https://v8.kuramanime.tel/anime/1387/bocchi-the-rock"
+                        },
+                        "id": {
+                          "type": "integer",
+                          "example": 1387
+                        },
+                        "slug": {
+                          "type": "string",
+                          "example": "bocchi-the-rock"
+                        },
+                        "title": {
+                          "type": "string",
+                          "example": "Bocchi the Rock!"
+                        },
+                        "type": {
+                          "type": "string",
+                          "example": "TV"
+                        },
+                        "episode_count": {
+                          "type": "integer",
+                          "example": 12
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "Finished"
+                        },
+                        "rating": {
+                          "type": "string",
+                          "example": "8.5"
+                        },
+                        "poster": {
+                          "type": "string",
+                          "example": "https://example.com/poster.jpg"
+                        }
+                      }
+                    }
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "hasNextPage": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "nextPage": {
+                        "type": "string",
+                        "example": "2"
+                      },
+                      "currentPage": {
+                        "type": "integer",
+                        "example": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/kuramanime/detail": {
+    "get": {
+      "summary": "Anime Detail",
+      "description": "Get detailed information about an anime including episodes",
+      "tags": ["Kuramanime"],
+      "parameters": [
+        {
+          "name": "url",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "Anime URL",
+          "example": "https://v8.kuramanime.tel/anime/1387/bocchi-the-rock"
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "default": 0
+          },
+          "description": "Episode page (0 for first page)"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "example": "1387"
+                      },
+                      "detail": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "example": "Bocchi the Rock!"
+                          },
+                          "alternativeTitle": {
+                            "type": "string",
+                            "example": "ぼっち・ざ・ろっく！"
+                          },
+                          "rating": {
+                            "type": "string",
+                            "example": "8.5"
+                          },
+                          "img": {
+                            "type": "string",
+                            "example": "https://example.com/image.jpg"
+                          },
+                          "sinopsis": {
+                            "type": "string",
+                            "example": "Series tentang bocchi yang rock..."
+                          }
+                        }
+                      },
+                      "episode": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "index": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "title": {
+                              "type": "string",
+                              "example": "Episode 1"
+                            },
+                            "episode": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "link": {
+                              "type": "string",
+                              "example": "/anime/1387/bocchi-the-rock/episode/1"
+                            }
+                          }
+                        }
+                      },
+                      "related": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "tags": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/kuramanime/episode": {
+    "get": {
+      "summary": "Episode Detail",
+      "description": "Get episode details including video links and downloads",
+      "tags": ["Kuramanime"],
+      "parameters": [
+        {
+          "name": "url",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": "Episode URL",
+          "example": "https://v8.kuramanime.tel/anime/1387/bocchi-the-rock/episode/1"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "postId": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "lastUpdated": {
+                        "type": "string"
+                      },
+                      "batch": {
+                        "type": "string"
+                      },
+                      "episode": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "episode": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "download": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string"
+                            },
+                            "links": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "url": {
+                                    "type": "string"
+                                  },
+                                  "recommended": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "video": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "quality": {
+                              "type": "string"
+                            },
+                            "url": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "/api/kuramanime/schedule": {
+    "get": {
+      "summary": "Anime Schedule",
+      "description": "Get anime schedule by day",
+      "tags": ["Kuramanime"],
+      "parameters": [
+        {
+          "name": "day",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+            "default": "monday"
+          },
+          "description": "Day of the week"
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "default": 1
+          },
+          "description": "Page number"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "hasNextPage": {
+                        "type": "boolean"
+                      },
+                      "nextPage": {
+                        "type": "string"
+                      },
+                      "currentPage": {
+                        "type": "integer"
+                      },
+                      "day": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "/api/kuramanime/ongoing": {
+    "get": {
+      "summary": "Ongoing Anime",
+      "description": "Get list of ongoing anime",
+      "tags": ["Kuramanime"],
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "default": 1
+          },
+          "description": "Page number"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "hasNextPage": {
+                        "type": "boolean"
+                      },
+                      "nextPage": {
+                        "type": "string"
+                      },
+                      "currentPage": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/api/kuramanime/finished": {
+    "get": {
+      "summary": "Finished Anime",
+      "description": "Get list of finished anime",
+      "tags": ["Kuramanime"],
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "default": 1
+          },
+          "description": "Page number"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "hasNextPage": {
+                        "type": "boolean"
+                      },
+                      "nextPage": {
+                        "type": "string"
+                      },
+                      "currentPage": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "/api/kuramanime/movie": {
+    "get": {
+      "summary": "Movie Anime",
+      "description": "Get list of anime movies",
+      "tags": ["Kuramanime"],
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "integer",
+            "default": 1
+          },
+          "description": "Page number"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "hasNextPage": {
+                        "type": "boolean"
+                      },
+                      "nextPage": {
+                        "type": "string"
+                      },
+                      "currentPage": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
 
 
+
+
+
+
+
+
+
+
+///
   "/api/search/pinterest": {
     "get": {
       "summary": "Pinterest Search with Base64",
