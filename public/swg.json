@@ -174,7 +174,161 @@
       }
     }
   },
- 
+  "/api/payment/saweria": {
+    "get": {
+      "summary": "Check Saweria Payment Status",
+      "description": "Check payment status by transaction ID",
+      "tags": ["Payment"],
+      "parameters": [
+        {
+          "name": "transaction_id",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Transaction ID to check",
+          "example": "txn_abc123"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "isPaid": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "data": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "post": {
+      "summary": "Create Saweria Payment QR",
+      "description": "Create QRIS payment for Saweria donation",
+      "tags": ["Payment"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "description": "Saweria username",
+                  "example": "dinz"
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 10000,
+                  "description": "Amount in IDR (min 10000)",
+                  "example": 15000
+                },
+                "sender": {
+                  "type": "string",
+                  "description": "Sender name",
+                  "example": "John Doe"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "description": "Sender email",
+                  "example": "john@example.com"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Donation message",
+                  "example": "Terima kasih!"
+                }
+              },
+              "required": ["username", "amount", "sender", "email", "message"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Payment QR created successfully"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "qr_string": {
+                        "type": "string",
+                        "example": "00020101021126680014ID.CO.QRIS.WWW..."
+                      },
+                      "transaction_id": {
+                        "type": "string",
+                        "example": "don_abc123xyz"
+                      },
+                      "amount": {
+                        "type": "integer",
+                        "example": 15000
+                      },
+                      "currency": {
+                        "type": "string",
+                        "example": "IDR"
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "example": "2024-01-01T23:59:59Z"
+                      },
+                      "qr_image_url": {
+                        "type": "string",
+                        "example": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=..."
+                      },
+                      "instructions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  
   
   "/api/ai/qwen-image": {
     "get": {
