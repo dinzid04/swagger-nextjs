@@ -329,6 +329,127 @@
     }
   },
   
+  "/api/tools/reactwa": {
+    "get": {
+      "summary": "WhatsApp Channel Reaction",
+      "description": "Send reaction to WhatsApp channel post",
+      "tags": ["Tools"],
+      "parameters": [
+        {
+          "name": "url",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "WhatsApp post/channel URL",
+          "example": "https://whatsapp.com/channel/0029VaABC123"
+        },
+        {
+          "name": "emoji",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Emoji(s) to react with (can be multiple)",
+          "example": "🔥❤️"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Success",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "message": {
+                    "type": "string",
+                    "example": "Reaction sent successfully"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "emojis": {
+                        "type": "string",
+                        "example": "🔥❤️"
+                      },
+                      "postUrl": {
+                        "type": "string",
+                        "example": "https://whatsapp.com/channel/0029VaABC123"
+                      },
+                      "remainingCoins": {
+                        "type": "number",
+                        "example": 950
+                      }
+                    }
+                  }
+                }
+              },
+              "example": {
+                "status": true,
+                "message": "Reaction sent successfully",
+                "data": {
+                  "emojis": "🔥❤️",
+                  "postUrl": "https://whatsapp.com/channel/0029VaABC123",
+                  "remainingCoins": 950
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Bad Request"
+        },
+        "402": {
+          "description": "Payment Required / Limit Exceeded"
+        },
+        "500": {
+          "description": "Internal Server Error"
+        }
+      }
+    },
+    "post": {
+      "summary": "WhatsApp Channel Reaction (POST)",
+      "description": "Send reaction to WhatsApp channel post using POST",
+      "tags": ["Tools"],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "WhatsApp post/channel URL",
+                  "example": "https://whatsapp.com/channel/0029VaABC123"
+                },
+                "emoji": {
+                  "type": "string",
+                  "description": "Emoji(s) to react with",
+                  "example": "🔥❤️"
+                }
+              },
+              "required": ["url", "emoji"]
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Success"
+        }
+      }
+    }
+  },
+  
   
   "/api/ai/qwen-image": {
     "get": {
