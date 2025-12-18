@@ -66,7 +66,7 @@ async function processQwenImage(prompt, ratio = '1:1') {
     ratio: encodeURIComponent(ratio)
   };
 
-  const apiUrl = `https://api.nekolabs.web.id/ai/qwen/image?prompt=${params.prompt}&ratio=${params.ratio}`;
+  const apiUrl = `https://api.nekolabs.web.id/image-generation/qwen/image?prompt=${params.prompt}&ratio=${params.ratio}`;
 
   console.log('Calling Qwen Image API:', apiUrl);
 
