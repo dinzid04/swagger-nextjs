@@ -60,7 +60,7 @@ async function processNanoBananaNeko(prompt, imageUrl) {
     imageUrl: encodeURIComponent(imageUrl)
   };
 
-  const apiUrl = `https://api.nekolabs.web.id/ai/gemini/nano-banana?prompt=${params.prompt}&imageUrl=${params.imageUrl}`;
+  const apiUrl = `https://api.nekolabs.web.id/image-generation/nano-banana/v5?prompt=${params.prompt}&imageUrl=${params.imageUrl}`;
 
   console.log('Calling Nano Banana API (nekolabs):', apiUrl);
 
