@@ -78,7 +78,7 @@ async function processAnimagine(prompt, ratio = '1:1') {
     ratio: encodeURIComponent(ratio)
   };
 
-  const apiUrl = `https://api.nekolabs.web.id/ai/animagine/xl-4.0?prompt=${params.prompt}&ratio=${params.ratio}`;
+  const apiUrl = `https://api.nekolabs.web.id/image-generation/animagine/xl-4.0?prompt=${params.prompt}&ratio=${params.ratio}`;
 
   console.log('Calling Animagine XL 4.0 API:', apiUrl);
 
@@ -103,7 +103,7 @@ async function processNSFWIllustrous(prompt, ratio = '1:1') {
     ratio: encodeURIComponent(ratio)
   };
 
-  const apiUrl = `https://api.nekolabs.web.id/ai/wai-nsfw-illustrous/v12?prompt=${params.prompt}&ratio=${params.ratio}`;
+  const apiUrl = `https://api.nekolabs.web.id/image-generation/wai-nsfw-illustrous/v12?prompt=${params.prompt}&ratio=${params.ratio}`;
 
   console.log('Calling NSFW Illustrous API:', apiUrl);
 
