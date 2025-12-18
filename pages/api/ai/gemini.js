@@ -65,7 +65,7 @@ async function processGemini(text, systemPrompt, imageUrl = null, sessionId) {
       imageUrl: encodeURIComponent(imageUrl),
       sessionId: encodeURIComponent(sessionId)
     };
-    apiUrl = `https://api.nekolabs.web.id/ai/gemini/2.5-flash?text=${params.text}&systemPrompt=${params.systemPrompt}&imageUrl=${params.imageUrl}&sessionId=${params.sessionId}`;
+    apiUrl = `https://api.nekolabs.web.id/text-generation/gemini/2.5-flash/v2?text=${params.text}&systemPrompt=${params.systemPrompt}&imageUrl=${params.imageUrl}&sessionId=${params.sessionId}`;
   } else {
     // Tanpa image (hanya text)
     const params = {
@@ -73,7 +73,7 @@ async function processGemini(text, systemPrompt, imageUrl = null, sessionId) {
       systemPrompt: encodeURIComponent(systemPrompt),
       sessionId: encodeURIComponent(sessionId)
     };
-    apiUrl = `https://api.nekolabs.web.id/ai/gemini/2.5-flash?text=${params.text}&systemPrompt=${params.systemPrompt}&sessionId=${params.sessionId}`;
+    apiUrl = `https://api.nekolabs.web.id/text-generation/gemini/2.5-flash/v2?text=${params.text}&systemPrompt=${params.systemPrompt}&sessionId=${params.sessionId}`;
   }
 
   console.log('Calling Gemini 2.5 Flash API:', apiUrl);
